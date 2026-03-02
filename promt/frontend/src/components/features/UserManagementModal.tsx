@@ -16,6 +16,7 @@ export default function UserManagementModal({ isOpen, onClose }: Props) {
     const { userId: adminUserId } = useUserStore();
     const { hapticFeedback, showAlert } = useTelegram();
     const [searchTerm, setSearchTerm] = useState('');
+    const [onlyRegistered, setOnlyRegistered] = useState(false);
     const [selectedUser, setSelectedUser] = useState<MockAppUser | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -31,10 +32,10 @@ export default function UserManagementModal({ isOpen, onClose }: Props) {
 
     if (!isOpen) return null;
 
-    const filteredUsers = users.filter(u =>
-        u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.id.includes(searchTerm)
-    );
+    const filteredUsers = users.filter(u => {
+        if (onlyRegistered && u.registered === false) return false;
+        return u.name.toLowerCase().includes(searchTerm.toLowerCase()) || u.id.includes(searchTerm);
+    });
 
     const refetchAndRefresh = async (id: string) => {
         if (!adminUserId) return;
@@ -141,19 +142,26 @@ export default function UserManagementModal({ isOpen, onClose }: Props) {
         <div className="fixed inset-0 z-50 bg-[#0D1117] flex flex-col animate-in slide-in-from-bottom-full duration-300">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-[#30363D]/50 bg-[#161B22]/80 backdrop-blur-md shrink-0">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0">
                     <button
                         onClick={selectedUser ? () => setSelectedUser(null) : onClose}
-                        className="w-10 h-10 rounded-full bg-[#1C2333] flex items-center justify-center text-white active:scale-95 transition-transform"
+                        className="w-10 h-10 rounded-full bg-[#1C2333] flex items-center justify-center text-white active:scale-95 transition-transform shrink-0"
                     >
                         <X size={20} />
                     </button>
-                    <h2 className="text-xl font-bold text-white tracking-wide">
-                        {selectedUser ? selectedUser.name : 'Пользователи'}
-                    </h2>
+                    <div className="min-w-0">
+                        <h2 className="text-xl font-bold text-white tracking-wide truncate">
+                            {selectedUser ? selectedUser.name : 'Пользователи'}
+                        </h2>
+                        {selectedUser && (
+                            <p className="text-xs text-[#8B949E] mt-0.5">
+                                {selectedUser.registered === false ? 'Посетитель (только открыл приложение)' : 'Зарегистрированный пользователь'}
+                            </p>
+                        )}
+                    </div>
                 </div>
                 {selectedUser && (
-                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                    <div className="flex items-center gap-1.5 flex-wrap justify-end shrink-0">
                         {selectedUser.registered === false && <span className="text-[10px] bg-[#8B949E]/30 text-[#8B949E] px-2 py-0.5 rounded-md font-bold">Не зарег.</span>}
                         {selectedUser.vipStatus && <span className="text-[10px] bg-[#F0883E]/20 text-[#F0883E] px-2 py-0.5 rounded-md font-bold">VIP</span>}
                         {selectedUser.isBanned && <span className="text-[10px] bg-[#FF4444]/20 text-[#FF4444] px-2 py-0.5 rounded-md font-bold">BAN</span>}
@@ -164,16 +172,27 @@ export default function UserManagementModal({ isOpen, onClose }: Props) {
             <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 space-y-4 overscroll-contain">
                 {!selectedUser ? (
                     <>
-                        {/* Search */}
-                        <div className="relative">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8B949E]" size={18} />
-                            <input
-                                type="text"
-                                placeholder="Поиск по имени или ID..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full bg-[#161B22] border border-[#30363D] focus:border-[#00D26A]/50 rounded-xl py-3 pl-11 pr-4 text-white placeholder:text-[#8B949E] outline-none transition-colors"
-                            />
+                        {/* Search + filter */}
+                        <div className="space-y-2">
+                            <div className="relative">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8B949E]" size={18} />
+                                <input
+                                    type="text"
+                                    placeholder="Поиск по имени или ID..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full bg-[#161B22] border border-[#30363D] focus:border-[#00D26A]/50 rounded-xl py-3 pl-11 pr-4 text-white placeholder:text-[#8B949E] outline-none transition-colors"
+                                />
+                            </div>
+                            <label className="flex items-center gap-2 text-sm text-[#8B949E] cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={onlyRegistered}
+                                    onChange={(e) => setOnlyRegistered(e.target.checked)}
+                                    className="rounded border-[#30363D] bg-[#161B22] text-[#00D26A] focus:ring-[#00D26A]"
+                                />
+                                Только зарегистрированные
+                            </label>
                         </div>
 
                         {/* User List */}
