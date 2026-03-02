@@ -4,7 +4,10 @@ import { mkdirSync, existsSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import {
-  findOrCreateUser,
+  userExists,
+  registerUser,
+  findUserByTelegramId,
+  updateLastActive,
   listUsers,
   updateUser,
   getUserById,
@@ -27,24 +30,72 @@ const isAdmin = (userId) => {
   return ADMIN_IDS.includes(id) || ADMIN_IDS.includes(userId);
 };
 
-// POST /api/auth/login — register or login by PIN + Telegram initData
-app.post('/api/auth/login', (req, res) => {
+// GET /api/auth/check?telegramId= — check if user is registered
+app.get('/api/auth/check', (req, res) => {
   try {
-    const { pin, telegramId, username, firstName, referredBy } = req.body;
-    if (!pin || !telegramId) {
-      return res.status(400).json({ success: false, error: 'pin and telegramId required' });
+    const telegramId = req.query.telegramId;
+    if (!telegramId) return res.status(400).json({ error: 'telegramId required' });
+    res.json({ exists: userExists(telegramId) });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+// POST /api/auth/register — create account (first time): set PIN
+app.post('/api/auth/register', (req, res) => {
+  try {
+    const { pin, confirmPin, telegramId, username, firstName, referredBy } = req.body;
+    if (!pin || !confirmPin || !telegramId) {
+      return res.status(400).json({ success: false, error: 'pin, confirmPin and telegramId required' });
     }
-    const user = findOrCreateUser({
+    if (String(pin) !== String(confirmPin)) {
+      return res.status(400).json({ success: false, error: 'pin_mismatch' });
+    }
+    if (String(pin).length < 4 || String(pin).length > 6) {
+      return res.status(400).json({ success: false, error: 'pin_length' });
+    }
+    if (userExists(telegramId)) {
+      return res.status(400).json({ success: false, error: 'already_registered' });
+    }
+    const user = registerUser({
       telegramId: String(telegramId),
       username: username || null,
       firstName: firstName || null,
       pin: String(pin),
       referredBy: referredBy || null,
     });
-    const match = user.pin_hash === String(pin);
-    if (!match) {
+    if (!user) return res.status(400).json({ success: false, error: 'already_registered' });
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        userId: user.id,
+        refCode: user.ref_code,
+        balanceUsdt: user.balance_usdt ?? 0,
+      },
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ success: false, error: 'server_error' });
+  }
+});
+
+// POST /api/auth/login — login with PIN (existing users only)
+app.post('/api/auth/login', (req, res) => {
+  try {
+    const { pin, telegramId } = req.body;
+    if (!pin || !telegramId) {
+      return res.status(400).json({ success: false, error: 'pin and telegramId required' });
+    }
+    const user = findUserByTelegramId(telegramId);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'not_registered' });
+    }
+    if (user.pin_hash !== String(pin)) {
       return res.status(401).json({ success: false, error: 'wrong_pin' });
     }
+    updateLastActive(user.id);
     res.json({
       success: true,
       user: {

@@ -5,18 +5,53 @@ import { api } from './client';
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+function getTelegramUser() {
+    const tg = (window as any).Telegram?.WebApp?.initDataUnsafe?.user;
+    return {
+        telegramId: tg?.id ? String(tg.id) : '6976131338',
+        username: tg?.username as string | undefined,
+        firstName: tg?.first_name as string | undefined,
+    };
+}
+
 export const MockAPI = {
-    async login(pin: string): Promise<boolean> {
-        const tg = (window as any).Telegram?.WebApp?.initDataUnsafe?.user;
-        const telegramId = tg?.id ? String(tg.id) : '6976131338';
+    async checkRegistered(): Promise<boolean> {
+        const { telegramId } = getTelegramUser();
+        const res = await api.get<{ exists: boolean }>(`/api/auth/check?telegramId=${encodeURIComponent(telegramId)}`);
+        return res.exists;
+    },
+
+    async register(pin: string, confirmPin: string): Promise<boolean> {
+        const { telegramId, username, firstName } = getTelegramUser();
         const referredBy = useUserStore.getState().referredBy;
+        try {
+            const res = await api.post<{ success: boolean; user?: { id: string; balanceUsdt: number } }>('/api/auth/register', {
+                pin,
+                confirmPin,
+                telegramId,
+                username,
+                firstName,
+                referredBy: referredBy || undefined,
+            });
+            if (!res.success || !res.user) return false;
+            useUserStore.getState().setUserId(res.user.id);
+            useUserStore.getState().setAuth(true, pin);
+            const wallet = useWalletStore.getState();
+            if (wallet.totalUsd === 0 && res.user.balanceUsdt != null) {
+                wallet.setBalances(res.user.balanceUsdt, { TON: 0, BSC: 0, TRC: 0, SOL: 0, BTC: 0, ETH: 0 });
+            }
+            return true;
+        } catch (e: any) {
+            throw e;
+        }
+    },
+
+    async login(pin: string): Promise<boolean> {
+        const { telegramId } = getTelegramUser();
         try {
             const res = await api.post<{ success: boolean; user?: { id: string; balanceUsdt: number } }>('/api/auth/login', {
                 pin,
                 telegramId,
-                username: tg?.username || undefined,
-                firstName: tg?.first_name || undefined,
-                referredBy: referredBy || undefined,
             });
             if (!res.success || !res.user) return false;
             useUserStore.getState().setUserId(res.user.id);
@@ -28,7 +63,7 @@ export const MockAPI = {
             }
             return true;
         } catch (e: any) {
-            if (e?.message === 'wrong_pin') return false;
+            if (e?.message === 'wrong_pin' || e?.message === 'not_registered') return false;
             throw e;
         }
     },

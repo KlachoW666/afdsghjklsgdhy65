@@ -42,19 +42,20 @@ function refCodeFromTelegramId(telegramId) {
   return s.length >= 6 ? s.slice(0, 8) : s.padStart(6, 'X');
 }
 
-export function findOrCreateUser({ telegramId, username, firstName, pin, referredBy }) {
+export function userExists(telegramId) {
+  const row = db.prepare('SELECT 1 FROM users WHERE telegram_id = ?').get(String(telegramId));
+  return !!row;
+}
+
+export function registerUser({ telegramId, username, firstName, pin, referredBy }) {
   const id = `tg_${telegramId}`;
   const refCode = refCodeFromTelegramId(telegramId);
-  let user = db.prepare('SELECT * FROM users WHERE telegram_id = ?').get(String(telegramId));
-  if (user) {
-    db.prepare('UPDATE users SET last_active = datetime("now") WHERE id = ?').run(id);
-    return { ...user, balance_usdt: user.balance_usdt ?? 0 };
-  }
+  if (userExists(telegramId)) return null;
   db.prepare(`
     INSERT INTO users (id, telegram_id, username, first_name, ref_code, referred_by_ref_code, pin_hash, balance_usdt)
     VALUES (?, ?, ?, ?, ?, ?, ?, 0)
   `).run(id, String(telegramId), username || '', firstName || '', refCode, referredBy || null, pin);
-  user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
   if (referredBy) {
     const referrer = db.prepare('SELECT id FROM users WHERE ref_code = ?').get(referredBy);
     if (referrer) {
@@ -64,10 +65,15 @@ export function findOrCreateUser({ telegramId, username, firstName, pin, referre
   return { ...user, balance_usdt: user.balance_usdt ?? 0 };
 }
 
-export function findUserByPin(telegramId, pin) {
-  const user = db.prepare('SELECT * FROM users WHERE telegram_id = ? AND pin_hash = ?').get(String(telegramId), pin);
+export function findUserByTelegramId(telegramId) {
+  const user = db.prepare('SELECT * FROM users WHERE telegram_id = ?').get(String(telegramId));
   return user ? { ...user, balance_usdt: user.balance_usdt ?? 0 } : null;
 }
+
+export function updateLastActive(id) {
+  db.prepare('UPDATE users SET last_active = datetime("now") WHERE id = ?').run(id);
+}
+
 
 export function listUsers() {
   const rows = db.prepare('SELECT * FROM users ORDER BY created_at DESC').all();

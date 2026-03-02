@@ -12,10 +12,16 @@ export const translations = {
         auth: {
             enterPin: 'Введите PIN',
             enterPinDesc: 'Введите PIN для входа в приложение.',
+            createPin: 'Создайте PIN-код',
+            createPinDesc: 'Придумайте PIN из 4–6 цифр. По нему вы будете входить в аккаунт.',
+            confirmPin: 'Подтвердите PIN',
             pinPlaceholder: 'Пин-код',
             login: 'Войти',
+            createAccount: 'Создать аккаунт',
             wrongPin: 'Неверный PIN-код',
-            networkError: 'Ошибка сети. Попробуйте еще раз.'
+            networkError: 'Ошибка сети. Попробуйте еще раз.',
+            pinMismatch: 'PIN-коды не совпадают',
+            pinLength: 'PIN должен быть от 4 до 6 цифр'
         },
         settings: {
             account: 'Аккаунт',
@@ -179,10 +185,16 @@ export const translations = {
         auth: {
             enterPin: 'Enter PIN',
             enterPinDesc: 'Enter PIN to sign in to the app.',
+            createPin: 'Create PIN',
+            createPinDesc: 'Choose a 4–6 digit PIN. You will use it to sign in.',
+            confirmPin: 'Confirm PIN',
             pinPlaceholder: 'PIN code',
             login: 'Sign In',
+            createAccount: 'Create account',
             wrongPin: 'Wrong PIN code',
-            networkError: 'Network error. Please try again.'
+            networkError: 'Network error. Please try again.',
+            pinMismatch: 'PINs do not match',
+            pinLength: 'PIN must be 4 to 6 digits'
         },
         settings: {
             account: 'Account',
