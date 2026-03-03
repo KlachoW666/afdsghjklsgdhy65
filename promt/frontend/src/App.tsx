@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Layout/Header';
 import BottomNav from './components/Layout/BottomNav';
@@ -33,9 +33,26 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => (
 function App() {
   const { isAuthenticated } = useUserStore();
 
+  // Validate session: if frontend thinks we're logged in but user doesn't exist in DB, auto-logout
+  const validateSession = useCallback(async () => {
+    if (!isAuthenticated) return;
+    try {
+      const exists = await MockAPI.checkRegistered();
+      if (!exists) {
+        console.warn('[Zyphex] Session invalid — user not in DB, logging out');
+        useUserStore.getState().logout();
+      }
+    } catch {
+      // Network error — do nothing, user may be offline
+    }
+  }, [isAuthenticated]);
+
   useEffect(() => {
+    // Always sync visitor (tracks everyone who opened the app)
     MockAPI.syncVisitor().catch(() => { });
-  }, []);
+    // Validate session against backend
+    validateSession();
+  }, [validateSession]);
 
   return (
     <Router>

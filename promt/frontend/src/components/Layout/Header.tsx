@@ -9,9 +9,11 @@ export default function Header() {
     return (
         <header className="flex w-full justify-between items-center px-5 h-16 bg-[#0D1117] border-b border-[#30363D] shrink-0">
             <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-[#00D26A] flex items-center justify-center text-black font-bold text-xl leading-none">
-                    A
-                </div>
+                <img
+                    src="/logo.svg"
+                    alt="Zyphex"
+                    className="w-9 h-9 rounded-full"
+                />
                 <span className="font-semibold text-white text-base tracking-wide">Zyphex Trading</span>
             </div>
             <div className="text-right flex flex-col justify-center h-full">
