@@ -11,8 +11,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const d = data as { error?: string; message?: string; detail?: string };
-    const err = new Error(d.message || d.error || res.statusText);
+    const statusText = res.statusText || (res.status === 502 ? 'Bad Gateway' : '');
+    const err = new Error(d.message || d.error || statusText);
     if (d.detail) (err as Error & { detail?: string }).detail = d.detail;
+    (err as Error & { status?: number }).status = res.status;
     throw err;
   }
   return data as T;

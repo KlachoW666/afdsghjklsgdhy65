@@ -70,11 +70,14 @@ export default function ExchangePage() {
             const err = e instanceof Error ? e : null;
             const msg = err?.message ?? '';
             const detail = (err as Error & { detail?: string })?.detail;
+            const status = (err as Error & { status?: number })?.status;
+            const isServerDown = status === 502 || status === 503 || /Bad Gateway|Failed to fetch|NetworkError/i.test(msg);
             if (msg === 'insufficient_balance') setError(t('exchange.errorInsufficient'));
             else if (msg === 'supply_exhausted') setError(t('exchange.errorSupplyExhausted'));
             else if (msg === 'invalid_amount') setError(t('exchange.errorMin'));
             else if (msg === 'server_error') setError(detail ? `${t('exchange.errorServer')} (${detail})` : t('exchange.errorServer'));
             else if (msg === 'user_not_found' || msg === 'not_authenticated') setError(t('exchange.errorSession'));
+            else if (isServerDown) setError(t('exchange.errorServerUnavailable'));
             else setError(detail ? `${t('exchange.errorNetwork')}: ${detail}` : t('exchange.errorNetwork'));
         } finally {
             setLoading(false);

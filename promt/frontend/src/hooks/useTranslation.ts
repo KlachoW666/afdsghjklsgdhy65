@@ -111,6 +111,7 @@ export const translations = {
             errorNetwork: 'Ошибка сети',
             errorSupplyExhausted: 'Пул ZYPHEX исчерпан',
             errorServer: 'Ошибка сервера. Попробуйте позже.',
+            errorServerUnavailable: 'Сервер временно недоступен. Попробуйте через минуту.',
             errorSession: 'Сессия устарела. Войдите снова.'
         },
         referral: {
@@ -318,6 +319,7 @@ export const translations = {
             errorNetwork: 'Network error',
             errorSupplyExhausted: 'ZYPHEX pool exhausted',
             errorServer: 'Server error. Try again later.',
+            errorServerUnavailable: 'Server temporarily unavailable. Try again in a minute.',
             errorSession: 'Session expired. Please log in again.'
         },
         referral: {
