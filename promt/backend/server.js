@@ -34,7 +34,8 @@ import {
   getZyphexExportList,
   getZyphexRemaining,
   getTotalZyphexSold,
-  ZYPHEX_TOTAL_SUPPLY,
+  getZyphexTotalSupply,
+  setZyphexTotalSupply,
 } from './db.js';
 import { startMonitoring } from './depositMonitor.js';
 
@@ -326,7 +327,7 @@ app.get('/api/zyphex/rate', (req, res) => {
     const rate = getZyphexRate();
     const remaining = getZyphexRemaining();
     const sold = getTotalZyphexSold();
-    res.json({ rate, remaining, totalSupply: ZYPHEX_TOTAL_SUPPLY, sold });
+    res.json({ rate, remaining, totalSupply: getZyphexTotalSupply(), sold });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'server_error' });
@@ -357,7 +358,8 @@ app.post('/api/zyphex/exchange', (req, res) => {
     }
     res.json(result);
   } catch (e) {
-    console.error(e);
+    console.error('[zyphex/exchange]', e?.message || e);
+    if (e?.stack) console.error(e.stack);
     res.status(500).json({ error: 'server_error' });
   }
 });
@@ -537,6 +539,34 @@ app.put('/api/admin/zyphex/rate', (req, res) => {
     if (!Number.isFinite(rate) || rate <= 0) return res.status(400).json({ error: 'invalid_rate' });
     setZyphexRate(rate);
     res.json({ ok: true, rate });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+app.get('/api/admin/zyphex/supply', (req, res) => {
+  try {
+    const adminUserId = req.query.userId || req.headers['x-user-id'];
+    if (!adminUserId || !isAdmin(adminUserId)) return res.status(403).json({ error: 'forbidden' });
+    const supply = getZyphexTotalSupply();
+    const sold = getTotalZyphexSold();
+    const remaining = getZyphexRemaining();
+    res.json({ supply, sold, remaining });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+app.put('/api/admin/zyphex/supply', (req, res) => {
+  try {
+    const adminUserId = req.query.userId || req.headers['x-user-id'];
+    if (!adminUserId || !isAdmin(adminUserId)) return res.status(403).json({ error: 'forbidden' });
+    const supply = Number(req.body.supply);
+    if (!Number.isFinite(supply) || supply < 0) return res.status(400).json({ error: 'invalid_supply' });
+    setZyphexTotalSupply(supply);
+    res.json({ ok: true, supply: getZyphexTotalSupply() });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'server_error' });

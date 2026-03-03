@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Coins, Save, Download } from 'lucide-react';
+import { Coins, Save, Download, Database } from 'lucide-react';
 import { useUserStore } from '../../store/userStore';
-import { getZyphexRate, setZyphexRate, downloadZyphexExportCsv } from '../../api/adminApi';
+import { getZyphexRate, setZyphexRate, getZyphexSupply, setZyphexSupply, downloadZyphexExportCsv } from '../../api/adminApi';
 
 export default function AdminZyphex() {
     const { userId: adminUserId } = useUserStore();
     const [rate, setRate] = useState<string>('100');
     const [savedRate, setSavedRate] = useState<number>(100);
+    const [supply, setSupply] = useState<string>('1000000');
+    const [savedSupply, setSavedSupply] = useState<number>(1000000);
+    const [sold, setSold] = useState<number>(0);
     const [loading, setLoading] = useState(false);
+    const [loadingSupply, setLoadingSupply] = useState(false);
     const [exporting, setExporting] = useState(false);
     const [message, setMessage] = useState('');
 
@@ -16,6 +20,15 @@ export default function AdminZyphex() {
         getZyphexRate(adminUserId).then((r) => {
             setSavedRate(r);
             setRate(String(r));
+        }).catch(() => {});
+    }, [adminUserId]);
+
+    useEffect(() => {
+        if (!adminUserId) return;
+        getZyphexSupply(adminUserId).then((data) => {
+            setSavedSupply(data.supply);
+            setSupply(String(data.supply));
+            setSold(data.sold);
         }).catch(() => {});
     }, [adminUserId]);
 
@@ -36,6 +49,30 @@ export default function AdminZyphex() {
             setMessage('Ошибка сохранения');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleSaveSupply = async () => {
+        const num = parseInt(supply, 10);
+        if (!Number.isFinite(num) || num < 0) {
+            setMessage('Введите неотрицательное целое число');
+            return;
+        }
+        if (num < sold) {
+            setMessage(`Объём пула не может быть меньше уже выданного (${sold.toLocaleString()} ZYPHEX)`);
+            return;
+        }
+        if (!adminUserId) return;
+        setLoadingSupply(true);
+        setMessage('');
+        try {
+            await setZyphexSupply(adminUserId, num);
+            setSavedSupply(num);
+            setMessage('Объём пула сохранён');
+        } catch {
+            setMessage('Ошибка сохранения');
+        } finally {
+            setLoadingSupply(false);
         }
     };
 
@@ -80,6 +117,33 @@ export default function AdminZyphex() {
                     </button>
                 </div>
                 <p className="text-[10px] text-[#8B949E]">Начальный курс при полном пуле: 1 USDT = <span className="text-[#00E676] font-bold">{savedRate}</span> ZYPHEX</p>
+            </div>
+
+            <div className="bg-[#161B22] border border-[#30363D] rounded-xl p-5">
+                <div className="flex items-center gap-2 text-[#00E676] font-bold mb-4">
+                    <Database size={20} />
+                    Объём пула ZYPHEX
+                </div>
+                <p className="text-xs text-[#8B949E] mb-2">Всего в пуле (всего доступно к выдаче). Уже выдано: <span className="text-[#00E676] font-mono">{sold.toLocaleString()}</span> ZYPHEX.</p>
+                <div className="flex gap-2 mb-2">
+                    <input
+                        type="number"
+                        min={sold}
+                        step={1}
+                        value={supply}
+                        onChange={(e) => setSupply(e.target.value)}
+                        className="flex-1 bg-[#0D1117] border border-[#30363D] rounded-xl py-2.5 px-4 text-white text-sm font-mono"
+                    />
+                    <button
+                        onClick={handleSaveSupply}
+                        disabled={loadingSupply}
+                        className="flex items-center gap-2 bg-[#00D26A] text-black rounded-xl py-2.5 px-4 font-bold text-sm disabled:opacity-50"
+                    >
+                        <Save size={16} />
+                        Сохранить
+                    </button>
+                </div>
+                <p className="text-[10px] text-[#8B949E]">Текущий объём пула: <span className="text-[#00E676] font-bold font-mono">{savedSupply.toLocaleString()}</span> ZYPHEX</p>
             </div>
 
             <div className="bg-[#161B22] border border-[#30363D] rounded-xl p-5">

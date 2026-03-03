@@ -49,6 +49,17 @@ export async function setZyphexRate(adminUserId: string, rate: number): Promise<
   await api.put(`/api/admin/zyphex/rate?userId=${encodeURIComponent(adminUserId)}`, { rate });
 }
 
+export async function getZyphexSupply(adminUserId: string): Promise<{ supply: number; sold: number; remaining: number }> {
+  const res = await api.get<{ supply: number; sold: number; remaining: number }>(
+    `/api/admin/zyphex/supply?userId=${encodeURIComponent(adminUserId)}`
+  );
+  return { supply: res.supply ?? 1000000, sold: res.sold ?? 0, remaining: res.remaining ?? 1000000 };
+}
+
+export async function setZyphexSupply(adminUserId: string, supply: number): Promise<void> {
+  await api.put(`/api/admin/zyphex/supply?userId=${encodeURIComponent(adminUserId)}`, { supply });
+}
+
 export async function downloadZyphexExportCsv(adminUserId: string): Promise<void> {
   const url = `${base}/api/admin/zyphex/export?userId=${encodeURIComponent(adminUserId)}&format=csv`;
   const res = await fetch(url);
