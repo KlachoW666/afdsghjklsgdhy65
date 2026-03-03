@@ -18,11 +18,24 @@ export default function AuthPage({ onLogin }: { onLogin: () => void }) {
     const { t } = useTranslation();
 
     useEffect(() => {
-        MockAPI.checkRegistered()
-            .then((exists) => {
-                setIsRegistration(!exists);
-            })
-            .catch(() => setIsRegistration(true))
+        const waitForTelegram = () =>
+            new Promise<void>((resolve) => {
+                if (window.Telegram?.WebApp?.initDataUnsafe?.user) return resolve();
+                let elapsed = 0;
+                const step = 80;
+                const max = 400;
+                const id = setInterval(() => {
+                    elapsed += step;
+                    if (window.Telegram?.WebApp?.initDataUnsafe?.user || elapsed >= max) {
+                        clearInterval(id);
+                        resolve();
+                    }
+                }, step);
+            });
+        waitForTelegram()
+            .then(() => MockAPI.checkRegistered())
+            .then((exists) => setIsRegistration(!exists))
+            .catch(() => setIsRegistration(false))
             .finally(() => setChecking(false));
     }, []);
 
@@ -66,6 +79,13 @@ export default function AuthPage({ onLogin }: { onLogin: () => void }) {
             }
         } catch (e: any) {
             const msg = e?.message;
+            if (msg === 'not_registered') {
+                setIsRegistration(true);
+                setError(t('auth.notRegisteredCreatePin'));
+                setPin('');
+                setConfirmPin('');
+                return;
+            }
             triggerError(msg === 'pin_mismatch' ? t('auth.pinMismatch') : msg === 'pin_length' ? t('auth.pinLength') : t('auth.networkError'));
         } finally {
             setLoading(false);

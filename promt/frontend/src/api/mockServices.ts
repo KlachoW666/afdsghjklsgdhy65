@@ -69,7 +69,8 @@ export const MockAPI = {
             }
             return true;
         } catch (e: any) {
-            if (e?.message === 'wrong_pin' || e?.message === 'not_registered') return false;
+            if (e?.message === 'not_registered') throw e;
+            if (e?.message === 'wrong_pin') return false;
             throw e;
         }
     },

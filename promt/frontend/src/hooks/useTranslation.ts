@@ -22,7 +22,8 @@ export const translations = {
             wrongPin: 'Неверный PIN-код',
             networkError: 'Ошибка сети. Попробуйте еще раз.',
             pinMismatch: 'PIN-коды не совпадают',
-            pinLength: 'PIN должен быть от 4 до 6 цифр'
+            pinLength: 'PIN должен быть от 4 до 6 цифр',
+            notRegisteredCreatePin: 'Аккаунт не найден. Создайте PIN для регистрации.'
         },
         settings: {
             account: 'Аккаунт',
@@ -228,7 +229,8 @@ export const translations = {
             wrongPin: 'Wrong PIN code',
             networkError: 'Network error. Please try again.',
             pinMismatch: 'PINs do not match',
-            pinLength: 'PIN must be 4 to 6 digits'
+            pinLength: 'PIN must be 4 to 6 digits',
+            notRegisteredCreatePin: 'Account not found. Create a PIN to register.'
         },
         settings: {
             account: 'Account',

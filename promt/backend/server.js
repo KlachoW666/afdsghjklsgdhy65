@@ -36,6 +36,7 @@ import {
   getTotalZyphexSold,
   getZyphexTotalSupply,
   setZyphexTotalSupply,
+  dbPath,
 } from './db.js';
 import { startMonitoring } from './depositMonitor.js';
 
@@ -349,7 +350,9 @@ app.get('/api/zyphex/balance', (req, res) => {
 
 app.post('/api/zyphex/exchange', (req, res) => {
   try {
-    const { userId, amountUsdt } = req.body;
+    const body = req.body && typeof req.body === 'object' ? req.body : {};
+    const userId = body.userId;
+    const amountUsdt = body.amountUsdt;
     if (!userId || amountUsdt == null) return res.status(400).json({ error: 'userId and amountUsdt required' });
     const result = exchangeUsdtToZyphex(userId, amountUsdt);
     if (result.error) {
@@ -358,9 +361,11 @@ app.post('/api/zyphex/exchange', (req, res) => {
     }
     res.json(result);
   } catch (e) {
-    console.error('[zyphex/exchange]', e?.message || e);
+    const msg = e?.message || String(e);
+    console.error('[zyphex/exchange]', msg);
     if (e?.stack) console.error(e.stack);
-    res.status(500).json({ error: 'server_error' });
+    const isProd = process.env.NODE_ENV === 'production';
+    res.status(500).json({ error: 'server_error', ...(isProd ? {} : { detail: msg }) });
   }
 });
 
@@ -600,5 +605,6 @@ app.get('/api/admin/zyphex/export', (req, res) => {
 const PORT = Number(process.env.PORT) || 3000;
 app.listen(PORT, () => {
   console.log(`Zyphex API listening on port ${PORT}`);
+  console.log(`Database: ${dbPath} (settings persist across restarts; set DB_PATH for custom path)`);
   startMonitoring();
 });

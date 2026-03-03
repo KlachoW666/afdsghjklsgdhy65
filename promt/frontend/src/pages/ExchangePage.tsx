@@ -67,13 +67,15 @@ export default function ExchangePage() {
                 setPool({ remaining: rateData.remaining, totalSupply: rateData.totalSupply, sold: rateData.sold ?? 0 });
             }
         } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : '';
+            const err = e instanceof Error ? e : null;
+            const msg = err?.message ?? '';
+            const detail = (err as Error & { detail?: string })?.detail;
             if (msg === 'insufficient_balance') setError(t('exchange.errorInsufficient'));
             else if (msg === 'supply_exhausted') setError(t('exchange.errorSupplyExhausted'));
             else if (msg === 'invalid_amount') setError(t('exchange.errorMin'));
-            else if (msg === 'server_error') setError(t('exchange.errorServer'));
+            else if (msg === 'server_error') setError(detail ? `${t('exchange.errorServer')} (${detail})` : t('exchange.errorServer'));
             else if (msg === 'user_not_found' || msg === 'not_authenticated') setError(t('exchange.errorSession'));
-            else setError(t('exchange.errorNetwork'));
+            else setError(detail ? `${t('exchange.errorNetwork')}: ${detail}` : t('exchange.errorNetwork'));
         } finally {
             setLoading(false);
         }

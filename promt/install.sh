@@ -42,11 +42,8 @@ echo "[4a/6] Building Frontend..."
 cd "$APP_DIR/promt/frontend"
 npm install
 
-# Delete stale DB if exists (PIN hashing changed)
-if [ -f "$APP_DIR/promt/backend/data/zyphex.db" ]; then
-    echo "Removing old database (PIN hashing changed)..."
-    rm -f "$APP_DIR/promt/backend/data/zyphex.db"
-fi
+# Keep existing database so admin settings and users persist across deploys.
+# To reset DB manually: rm -f "$APP_DIR/promt/backend/data/zyphex.db" before re-running.
 
 echo "Building for production..."
 npm run build
