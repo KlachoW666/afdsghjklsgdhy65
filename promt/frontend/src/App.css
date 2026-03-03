@@ -4,23 +4,79 @@
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
-/* Smooth transitions for page content */
+/* ═══ Page Transitions ═══ */
 .animate-in {
-  animation: fadeIn 0.3s ease-out;
+  animation: slide-up-fade 0.35s ease-out both;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* ═══ Modal slide-in ═══ */
+.modal-enter {
+  animation: slide-in-bottom 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ═══ Trade row entry ═══ */
+.trade-row-enter {
+  animation: float-up 0.3s ease-out both;
+}
+
+/* ═══ Gradient border glow (for active cards) ═══ */
+.gradient-border-green {
+  position: relative;
+}
+
+.gradient-border-green::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(0, 230, 118, 0.4), rgba(0, 200, 83, 0.1), transparent);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ═══ Network accent colors ═══ */
+.network-ton {
+  --network-color: #60A5FA;
+}
+
+.network-bsc {
+  --network-color: #FBBF24;
+}
+
+.network-bnb {
+  --network-color: #F0B429;
+}
+
+.network-trc {
+  --network-color: #FF5252;
+}
+
+.network-sol {
+  --network-color: #A78BFA;
+}
+
+.network-btc {
+  --network-color: #F59E0B;
+}
+
+.network-eth {
+  --network-color: #818CF8;
+}
+
+/* ═══ Shimmer skeleton ═══ */
+.skeleton {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.02) 25%, rgba(255, 255, 255, 0.06) 50%, rgba(255, 255, 255, 0.02) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  border-radius: 8px;
 }

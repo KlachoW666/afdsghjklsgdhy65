@@ -6,6 +6,12 @@ import { useTranslation } from '../hooks/useTranslation';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+const MODE_ACCENTS = {
+    safe: { color: '#00E676', bgClass: 'bg-[#00E676]', bgDim: 'bg-[#00E676]/10', borderClass: 'border-[#00E676]/40', glowClass: 'shadow-[0_0_20px_rgba(0,230,118,0.12)]' },
+    balanced: { color: '#60A5FA', bgClass: 'bg-[#60A5FA]', bgDim: 'bg-[#60A5FA]/10', borderClass: 'border-[#60A5FA]/40', glowClass: 'shadow-[0_0_20px_rgba(96,165,250,0.12)]' },
+    aggressive: { color: '#FF5252', bgClass: 'bg-[#FF5252]', bgDim: 'bg-[#FF5252]/10', borderClass: 'border-[#FF5252]/40', glowClass: 'shadow-[0_0_20px_rgba(255,82,82,0.12)]' },
+};
+
 export default function SettingsPage() {
     const { botMode, setBotMode, language, setLanguage, userId, isAdmin } = useUserStore();
     const { hapticFeedback, showConfirm, showAlert } = useTelegram();
@@ -39,7 +45,6 @@ export default function SettingsPage() {
 
     const performReset = async () => {
         setResetting(true);
-        // Hardcoded pin verification to simulate modal
         const success = await MockAPI.resetBalance(useUserStore.getState().pin || '');
         setResetting(false);
 
@@ -73,49 +78,58 @@ export default function SettingsPage() {
     };
 
     return (
-        <div className="space-y-8 pb-4">
+        <div className="space-y-8 pb-4 stagger-children">
+            {/* Account */}
             <section>
-                <h3 className="text-[11px] font-bold text-[#8B949E] uppercase tracking-wider mb-3">{t('settings.account')}</h3>
-                <div className="bg-[#161B22] border border-[#30363D] rounded-xl p-4 flex justify-between items-center">
+                <h3 className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider mb-3">{t('settings.account')}</h3>
+                <div className="glass-card rounded-xl p-4 flex justify-between items-center">
                     <div>
-                        <div className="text-[#8B949E] text-xs font-bold uppercase mb-1">{t('settings.userId')}</div>
-                        <div className="font-mono text-white text-sm">{userId}</div>
+                        <div className="text-[#64748B] text-xs font-bold uppercase mb-1">{t('settings.userId')}</div>
+                        <div className="font-mono text-[#F8FAFC] text-sm">{userId}</div>
                     </div>
-                    <button className="text-[#00D26A] text-sm font-semibold hover:underline">{t('settings.changePin')}</button>
+                    <button className="text-[#00E676] text-sm font-semibold hover:underline transition-colors">{t('settings.changePin')}</button>
                 </div>
             </section>
 
+            {/* Bot Mode */}
             <section>
-                <h3 className="text-[11px] font-bold text-[#8B949E] uppercase tracking-wider mb-3">{t('settings.botMode')}</h3>
-                <div className="space-y-2">
+                <h3 className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider mb-3">{t('settings.botMode')}</h3>
+                <div className="space-y-2.5">
                     <ModeCard
                         id="safe" title={t('settings.safeMode')} desc={t('settings.safeModeDesc')} icon={Shield}
-                        active={botMode === 'safe'} onClick={() => handleModeChange('safe')}
+                        active={botMode === 'safe'} onClick={() => handleModeChange('safe')} accents={MODE_ACCENTS.safe}
                     />
                     <ModeCard
                         id="balanced" title={t('settings.balancedMode')} desc={t('settings.balancedModeDesc')} icon={Scale}
-                        active={botMode === 'balanced'} onClick={() => handleModeChange('balanced')}
+                        active={botMode === 'balanced'} onClick={() => handleModeChange('balanced')} accents={MODE_ACCENTS.balanced}
                     />
                     <ModeCard
                         id="aggressive" title={t('settings.aggressiveMode')} desc={t('settings.aggressiveModeDesc')} icon={Rocket}
-                        active={botMode === 'aggressive'} onClick={() => handleModeChange('aggressive')}
+                        active={botMode === 'aggressive'} onClick={() => handleModeChange('aggressive')} accents={MODE_ACCENTS.aggressive}
                     />
                 </div>
             </section>
 
+            {/* Language */}
             <section>
-                <h3 className="text-[11px] font-bold text-[#8B949E] uppercase tracking-wider mb-3 flex items-center gap-2">
+                <h3 className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider mb-3 flex items-center gap-2">
                     <Globe size={14} /> {t('settings.language')}
                 </h3>
-                <div className="flex rounded-xl overflow-hidden bg-[#161B22] border border-[#30363D] p-1">
+                <div className="flex glass-card rounded-xl overflow-hidden p-1">
                     <button
-                        className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors ${language === 'en' ? 'bg-[#00D26A] text-black' : 'text-[#8B949E]'}`}
+                        className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all duration-300 ${language === 'en'
+                            ? 'bg-gradient-to-r from-[#00E676] to-[#00C853] text-black shadow-[0_2px_10px_rgba(0,230,118,0.2)]'
+                            : 'text-[#64748B] hover:text-[#94A3B8]'
+                            }`}
                         onClick={() => handleLangChange('en')}
                     >
                         English
                     </button>
                     <button
-                        className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors ${language === 'ru' ? 'bg-[#00D26A] text-black' : 'text-[#8B949E]'}`}
+                        className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all duration-300 ${language === 'ru'
+                            ? 'bg-gradient-to-r from-[#00E676] to-[#00C853] text-black shadow-[0_2px_10px_rgba(0,230,118,0.2)]'
+                            : 'text-[#64748B] hover:text-[#94A3B8]'
+                            }`}
                         onClick={() => handleLangChange('ru')}
                     >
                         Русский
@@ -123,16 +137,17 @@ export default function SettingsPage() {
                 </div>
             </section>
 
+            {/* Danger Zone */}
             <section>
-                <h3 className="text-[11px] font-bold text-[#FF4444] uppercase tracking-wider mb-3">{t('settings.dangerZone')}</h3>
-                <div className="space-y-3">
-                    <div className="text-xs text-[#8B949E] mb-2 leading-relaxed">
+                <h3 className="text-[11px] font-bold text-[#FF5252] uppercase tracking-wider mb-3">{t('settings.dangerZone')}</h3>
+                <div className="glass-card rounded-xl p-4 border-[#FF5252]/10 space-y-3">
+                    <div className="text-xs text-[#64748B] leading-relaxed">
                         {t('settings.resetDesc')}
                     </div>
                     <button
                         onClick={handleReset}
                         disabled={resetting || loggingOut}
-                        className="w-full flex items-center justify-center gap-2 bg-transparent border border-[#00D26A] text-[#00D26A] rounded-xl py-3.5 font-semibold transition-all hover:bg-[#00D26A]/10 active:scale-95 disabled:opacity-50"
+                        className="w-full flex items-center justify-center gap-2 glass-card border-[#00E676]/30 text-[#00E676] rounded-xl py-3.5 font-semibold transition-all hover:bg-[#00E676]/[0.06] active:scale-95 disabled:opacity-40"
                     >
                         {resetting ? <Loader2 className="animate-spin" size={16} /> : <RefreshCcw size={16} />}
                         {t('settings.resetBtn')}
@@ -140,7 +155,7 @@ export default function SettingsPage() {
                     <button
                         onClick={handleLogout}
                         disabled={resetting || loggingOut}
-                        className="w-full flex items-center justify-center gap-2 bg-transparent border border-[#FF4444] text-[#FF4444] rounded-xl py-3.5 font-semibold transition-all hover:bg-[#FF4444]/10 active:scale-95 disabled:opacity-50"
+                        className="w-full flex items-center justify-center gap-2 glass-card border-[#FF5252]/30 text-[#FF5252] rounded-xl py-3.5 font-semibold transition-all hover:bg-[#FF5252]/[0.06] active:scale-95 disabled:opacity-40"
                     >
                         {loggingOut ? <Loader2 className="animate-spin" size={16} /> : <LogOut size={16} />}
                         {t('settings.logout')}
@@ -148,44 +163,44 @@ export default function SettingsPage() {
                 </div>
             </section>
 
-            {
-                isAdmin && (
-                    <section className="pt-2">
-                        <button
-                            onClick={() => {
-                                hapticFeedback?.impactOccurred('light');
-                                navigate('/admin');
-                            }}
-                            className="w-full bg-[#1C2333]/30 border border-[#00D26A]/20 hover:border-[#00D26A]/50 rounded-xl p-4 flex items-center gap-4 transition-all group active:scale-[0.98]"
-                        >
-                            <div className="w-10 h-10 rounded-xl bg-[#00D26A]/10 flex items-center justify-center text-[#00D26A] group-hover:bg-[#00D26A]/20 transition-colors">
-                                <ShieldAlert size={20} />
-                            </div>
-                            <span className="text-[15px] font-bold text-[#00D26A] tracking-wide">{t('settings.adminPanel')}</span>
-                        </button>
-                    </section>
-                )
-            }
-        </div >
+            {isAdmin && (
+                <section className="pt-2">
+                    <button
+                        onClick={() => {
+                            hapticFeedback?.impactOccurred('light');
+                            navigate('/admin');
+                        }}
+                        className="w-full glass-card border-[#00E676]/20 hover:border-[#00E676]/40 rounded-xl p-4 flex items-center gap-4 transition-all group active:scale-[0.98]"
+                    >
+                        <div className="w-11 h-11 rounded-xl bg-[#00E676]/10 flex items-center justify-center text-[#00E676] group-hover:bg-[#00E676]/15 transition-all animate-pulse-glow">
+                            <ShieldAlert size={20} />
+                        </div>
+                        <span className="text-[15px] font-bold text-[#00E676] tracking-wide text-shadow-green">{t('settings.adminPanel')}</span>
+                    </button>
+                </section>
+            )}
+        </div>
     );
 }
 
-function ModeCard({ title, desc, icon: Icon, active, onClick }: any) {
+function ModeCard({ title, desc, icon: Icon, active, onClick, accents }: any) {
     return (
         <div
             onClick={onClick}
-            className={`bg-[#161B22] border rounded-xl p-4 flex items-center gap-4 cursor-pointer transition-all active:scale-[0.98] ${active ? 'border-[#00D26A] shadow-[0_0_15px_rgba(0,210,106,0.1)]' : 'border-[#30363D]'}`}
+            className={`glass-card rounded-xl p-4 flex items-center gap-4 cursor-pointer transition-all duration-300 active:scale-[0.98] ${active ? `${accents.borderClass} ${accents.glowClass}` : 'border-white/[0.06]'
+                }`}
         >
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${active ? 'bg-[#00D26A] text-black' : 'bg-[#1C2333] text-[#8B949E]'}`}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${active ? `${accents.bgClass} text-black` : 'bg-[#151A28] text-[#64748B]'
+                }`}>
                 <Icon size={20} />
             </div>
-            <div>
-                <div className={`text-sm font-semibold mb-1 ${active ? 'text-white' : 'text-[#8B949E]'}`}>{title}</div>
-                <div className="text-[10px] text-[#8B949E] opacity-80">{desc}</div>
+            <div className="flex-1">
+                <div className={`text-sm font-semibold mb-1 transition-colors duration-200 ${active ? 'text-[#F8FAFC]' : 'text-[#94A3B8]'}`}>{title}</div>
+                <div className="text-[10px] text-[#64748B]">{desc}</div>
             </div>
             {active && (
-                <div className="ml-auto w-4 h-4 rounded-full bg-[#00D26A] flex items-center justify-center text-black">
-                    <div className="w-1.5 h-1.5 rounded-full bg-black"></div>
+                <div className={`w-4 h-4 rounded-full ${accents.bgClass} flex items-center justify-center animate-scale-in`}>
+                    <div className="w-1.5 h-1.5 rounded-full bg-black" />
                 </div>
             )}
         </div>

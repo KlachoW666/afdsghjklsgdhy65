@@ -23,56 +23,67 @@ export default function ReferralPage() {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 stagger-children">
             {referredBy && (
-                <div className="bg-[#00D26A]/10 border border-[#00D26A]/30 rounded-xl px-4 py-3 text-sm text-[#00D26A]">
+                <div className="glass-card rounded-xl px-4 py-3 text-sm text-[#00E676] border-[#00E676]/20">
                     {t('referral.invitedBy')} <span className="font-bold font-mono">{referredBy}</span>
                 </div>
             )}
-            <div className="bg-gradient-to-br from-[#161B22] to-[#0D1117] border border-[#30363D] rounded-2xl p-5 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-[#00D26A]/5 blur-[60px] rounded-full"></div>
 
-                <h2 className="text-lg font-semibold mb-1 relative z-10">{t('referral.title')}</h2>
-                <p className="text-[#8B949E] text-xs mb-4 relative z-10">{t('referral.subtitle')}</p>
+            {/* Hero Card */}
+            <div className="glass-card-elevated rounded-2xl p-6 relative overflow-hidden">
+                {/* Aurora blurs */}
+                <div className="absolute top-0 right-0 w-40 h-40 bg-[#00E676]/[0.05] blur-[70px] rounded-full pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-[#60A5FA]/[0.04] blur-[50px] rounded-full pointer-events-none" />
 
-                <div className="bg-[#1C2333] border border-[#30363D] rounded-xl flex items-center p-1 pl-3 mb-3 relative z-10">
-                    <div className="truncate text-sm text-[#8B949E] flex-1 font-mono">{refLink}</div>
-                    <button
-                        onClick={handleCopy}
-                        className={`w-10 h-10 rounded-lg flex items-center justify-center ml-2 transition-all active:scale-95 shrink-0 ${copied ? 'bg-[#1C2333] text-[#00D26A] border border-[#00D26A]' : 'bg-[#00D26A] text-black'
-                            }`}
-                    >
-                        {copied ? <CheckCircle2 size={18} /> : <Copy size={18} />}
-                    </button>
-                </div>
+                <div className="relative z-10">
+                    <h2 className="text-lg font-bold mb-1 text-[#F8FAFC]">{t('referral.title')}</h2>
+                    <p className="text-[#64748B] text-xs mb-5">{t('referral.subtitle')}</p>
 
-                <div className="text-center font-mono text-sm font-semibold text-white relative z-10">
-                    {t('referral.yourCode')} <span className="text-[#00D26A]">{refCode}</span>
+                    <div className="glass-card rounded-xl flex items-center p-1.5 pl-3.5 mb-4">
+                        <div className="truncate text-sm text-[#94A3B8] flex-1 font-mono">{refLink}</div>
+                        <button
+                            onClick={handleCopy}
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center ml-2 transition-all duration-300 active:scale-90 shrink-0 ${copied
+                                    ? 'glass-card text-[#00E676] border border-[#00E676]/40 shadow-[0_0_12px_rgba(0,230,118,0.2)]'
+                                    : 'bg-gradient-to-r from-[#00E676] to-[#00C853] text-black shadow-[0_2px_10px_rgba(0,230,118,0.25)]'
+                                }`}
+                        >
+                            {copied ? <CheckCircle2 size={18} className="animate-scale-in" /> : <Copy size={18} />}
+                        </button>
+                    </div>
+
+                    <div className="text-center font-mono text-sm font-semibold text-[#94A3B8]">
+                        {t('referral.yourCode')} <span className="text-[#00E676] text-shadow-green">{refCode}</span>
+                    </div>
                 </div>
             </div>
 
+            {/* Stats Grid */}
             <div className="grid grid-cols-2 gap-3">
-                <div className="bg-[#161B22] border border-[#30363D] rounded-xl p-4">
-                    <div className="w-8 h-8 rounded-full bg-[#1C2333] flex items-center justify-center mb-3">
-                        <Users size={16} className="text-[#8B949E]" />
+                <div className="glass-card rounded-xl p-4">
+                    <div className="w-9 h-9 rounded-xl bg-[#60A5FA]/10 flex items-center justify-center mb-3">
+                        <Users size={16} className="text-[#60A5FA]" />
                     </div>
-                    <div className="text-2xl font-bold font-mono text-white mb-1">0</div>
-                    <div className="text-[10px] text-[#8B949E] uppercase font-bold leading-tight">{t('referral.invited')}</div>
-                    <div className="text-[10px] text-[#8B949E] mt-1 opacity-70">{t('referral.clickedLink')}</div>
+                    <div className="text-2xl font-bold font-mono text-[#F8FAFC] mb-1">0</div>
+                    <div className="text-[10px] text-[#64748B] uppercase font-bold leading-tight">{t('referral.invited')}</div>
+                    <div className="text-[10px] text-[#64748B] mt-1 opacity-70">{t('referral.clickedLink')}</div>
                 </div>
 
-                <div className="bg-[#161B22] border border-[#00D26A]/30 rounded-xl p-4 shadow-[0_0_15px_rgba(0,210,106,0.05)]">
-                    <div className="w-8 h-8 rounded-full bg-[#00D26A]/10 flex items-center justify-center mb-3">
-                        <Gift size={16} className="text-[#00D26A]" />
+                <div className="glass-card glow-green rounded-xl p-4">
+                    <div className="w-9 h-9 rounded-xl bg-[#00E676]/10 flex items-center justify-center mb-3">
+                        <Gift size={16} className="text-[#00E676]" />
                     </div>
-                    <div className="text-2xl font-bold font-mono text-[#00D26A] mb-1">+$0.00</div>
-                    <div className="text-[10px] text-[#8B949E] uppercase font-bold leading-tight">{t('referral.earned')}</div>
-                    <div className="text-[10px] text-[#8B949E] mt-1 opacity-70">{t('referral.fromDeposits')}</div>
+                    <div className="text-2xl font-bold font-mono text-[#00E676] mb-1 text-shadow-green">+$0.00</div>
+                    <div className="text-[10px] text-[#64748B] uppercase font-bold leading-tight">{t('referral.earned')}</div>
+                    <div className="text-[10px] text-[#64748B] mt-1 opacity-70">{t('referral.fromDeposits')}</div>
                 </div>
             </div>
 
-            <div className="text-xs text-[#8B949E] bg-[#161B22] p-4 rounded-xl border border-[#30363D] leading-relaxed">
-                <strong className="text-white">{t('referral.howItWorks')}</strong> {t('referral.howItWorksDesc')}
+            {/* How it works */}
+            <div className="glass-card rounded-xl p-5 text-xs text-[#94A3B8] leading-relaxed">
+                <strong className="text-[#F8FAFC] text-sm">{t('referral.howItWorks')}</strong>
+                <div className="mt-2">{t('referral.howItWorksDesc')}</div>
             </div>
         </div>
     );

@@ -15,7 +15,7 @@ export default function BottomNav() {
     ];
 
     return (
-        <nav className="flex justify-around items-center h-16 bg-[#161B22] border-t border-[#30363D] pb-[env(safe-area-inset-bottom)] shrink-0 px-2 relative z-50">
+        <nav className="flex justify-around items-center h-16 bg-[#111827]/90 backdrop-blur-xl border-t border-white/[0.06] pb-[env(safe-area-inset-bottom)] shrink-0 px-2 relative z-50">
             {tabs.map((tab) => {
                 const Icon = tab.icon;
                 return (
@@ -23,12 +23,34 @@ export default function BottomNav() {
                         key={tab.path}
                         to={tab.path}
                         className={({ isActive }) => clsx(
-                            'flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors',
-                            isActive ? 'text-[#00D26A]' : 'text-[#8B949E] hover:text-white'
+                            'flex flex-col items-center justify-center w-full h-full space-y-1.5 transition-all duration-200 relative',
+                            isActive ? 'text-[#00E676]' : 'text-[#64748B] hover:text-[#94A3B8]'
                         )}
                     >
-                        <Icon size={24} strokeWidth={1.5} />
-                        <span className="text-[10px] uppercase font-semibold tracking-wider">{tab.label}</span>
+                        {({ isActive }) => (
+                            <>
+                                {/* Pill indicator */}
+                                <div className={clsx(
+                                    'absolute top-1 w-5 h-1 rounded-full transition-all duration-300',
+                                    isActive ? 'bg-[#00E676] shadow-[0_0_8px_rgba(0,230,118,0.5)]' : 'bg-transparent'
+                                )} />
+
+                                <Icon
+                                    size={22}
+                                    strokeWidth={1.5}
+                                    className={clsx(
+                                        'transition-all duration-200',
+                                        isActive && 'drop-shadow-[0_0_6px_rgba(0,230,118,0.5)]'
+                                    )}
+                                />
+                                <span className={clsx(
+                                    'text-[9px] uppercase font-semibold tracking-wider transition-all duration-200',
+                                    isActive && 'text-shadow-green'
+                                )}>
+                                    {tab.label}
+                                </span>
+                            </>
+                        )}
                     </NavLink>
                 );
             })}

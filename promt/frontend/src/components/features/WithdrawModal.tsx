@@ -75,30 +75,30 @@ export default function WithdrawModal({ onClose }: { onClose: () => void }) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 bg-[#1C2333] flex flex-col w-full h-full animate-in slide-in-from-bottom duration-300">
+        <div className="fixed inset-0 z-50 flex flex-col w-full h-full animate-slide-in-bottom" style={{ background: 'linear-gradient(180deg, #0B0F19 0%, #060A13 100%)' }}>
 
             {/* Header */}
             <div className="flex justify-between items-start px-5 pt-6 pb-4">
                 <div>
-                    <h3 className="text-[22px] font-bold text-white tracking-wide mb-1.5 shadow-sm">
+                    <h3 className="text-[22px] font-bold text-[#F8FAFC] tracking-wide mb-1.5">
                         {t('withdraw.title')}
                     </h3>
-                    <div className="text-[11px] font-semibold text-[#8B949E] tracking-widest uppercase">
+                    <div className="text-[11px] font-semibold text-[#64748B] tracking-widest uppercase">
                         {NETWORKS.join(' · ')}
                     </div>
                 </div>
-                <button onClick={onClose} className="p-1.5 rounded-full hover:bg-[#161B22] transition-colors text-[#8B949E] hover:text-white mt-0.5">
-                    <X size={22} />
+                <button onClick={onClose} className="p-2 rounded-xl glass-card transition-all text-[#94A3B8] hover:text-white active:scale-90">
+                    <X size={20} />
                 </button>
             </div>
 
             {/* Content */}
             <div className="px-5 pb-8 overflow-y-auto no-scrollbar flex-1 flex flex-col space-y-6">
 
-
+                {/* Network Selector */}
                 <div>
-                    <div className="text-xs text-[#8B949E] font-bold uppercase mb-2">{t('withdraw.selectNetwork')}</div>
-                    <div className="flex bg-[#1C2333] p-1 rounded-xl overflow-x-auto no-scrollbar">
+                    <div className="text-xs text-[#64748B] font-bold uppercase mb-2 tracking-wider">{t('withdraw.selectNetwork')}</div>
+                    <div className="flex glass-card p-1 rounded-xl overflow-x-auto no-scrollbar">
                         {NETWORKS.map((net) => (
                             <button
                                 key={net}
@@ -107,9 +107,9 @@ export default function WithdrawModal({ onClose }: { onClose: () => void }) {
                                     setError('');
                                     hapticFeedback?.selectionChanged();
                                 }}
-                                className={`flex-1 min-w-[60px] py-1.5 text-xs font-bold rounded-lg transition-all ${activeNetwork === net
-                                    ? 'bg-[#00D26A] text-black shadow-sm'
-                                    : 'text-[#8B949E] hover:text-white'
+                                className={`flex-1 min-w-[60px] py-2 text-xs font-bold rounded-lg transition-all duration-200 ${activeNetwork === net
+                                    ? 'bg-gradient-to-r from-[#00E676] to-[#00C853] text-black shadow-[0_2px_10px_rgba(0,230,118,0.2)]'
+                                    : 'text-[#64748B] hover:text-[#94A3B8]'
                                     }`}
                             >
                                 {net}
@@ -118,11 +118,12 @@ export default function WithdrawModal({ onClose }: { onClose: () => void }) {
                     </div>
                 </div>
 
+                {/* Amount Input */}
                 <div>
                     <div className="flex justify-between items-end mb-2">
-                        <div className="text-xs text-[#8B949E] font-bold uppercase">{t('withdraw.amountUsd')}</div>
-                        <div className="text-[10px] text-[#8B949E]">
-                            {t('withdraw.available')} <span className="text-white font-mono">{formatCurrency(balances[activeNetwork])}</span>
+                        <div className="text-xs text-[#64748B] font-bold uppercase tracking-wider">{t('withdraw.amountUsd')}</div>
+                        <div className="text-[10px] text-[#64748B]">
+                            {t('withdraw.available')} <span className="text-[#F8FAFC] font-mono">{formatCurrency(balances[activeNetwork])}</span>
                         </div>
                     </div>
 
@@ -136,29 +137,30 @@ export default function WithdrawModal({ onClose }: { onClose: () => void }) {
                             }}
                             disabled={loading}
                             placeholder="0.00"
-                            className="w-full bg-[#1C2333] border border-[#30363D] focus:border-[#00D26A] rounded-xl px-4 py-3.5 text-white font-mono text-xl focus:outline-none transition-colors disabled:opacity-50"
+                            className="w-full glass-card border-white/[0.08] focus:border-[#00E676]/40 rounded-xl px-4 py-3.5 text-[#F8FAFC] font-mono text-xl focus:outline-none transition-all duration-200 disabled:opacity-40"
                         />
                         <button
                             onClick={handleMax}
                             disabled={loading}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#00D26A] hover:text-white transition-colors bg-[#00D26A]/10 px-2 py-1 rounded"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#00E676] hover:text-white transition-all bg-[#00E676]/10 hover:bg-[#00E676]/20 px-2.5 py-1.5 rounded-lg"
                         >
                             {t('withdraw.max')}
                         </button>
                     </div>
 
                     <div className="flex justify-between items-center mt-2 px-1">
-                        <div className="text-[10px] text-[#8B949E]">
+                        <div className="text-[10px] text-[#64748B]">
                             {t('withdraw.minMaxDaily').replace('${min}', withdrawLimits.minAmount.toString()).replace('${max}', withdrawLimits.maxDailyAmount.toString())}
                         </div>
-                        <div className="text-[10px] text-[#8B949E]">
-                            {t('withdraw.remainingToday')} <span className="text-white font-mono">{formatCurrency(withdrawLimits.remainingToday)}</span>
+                        <div className="text-[10px] text-[#64748B]">
+                            {t('withdraw.remainingToday')} <span className="text-[#F8FAFC] font-mono">{formatCurrency(withdrawLimits.remainingToday)}</span>
                         </div>
                     </div>
                 </div>
 
+                {/* Wallet Address */}
                 <div>
-                    <div className="text-xs text-[#8B949E] font-bold uppercase mb-2">{t('withdraw.walletAddress')} ({activeNetwork})</div>
+                    <div className="text-xs text-[#64748B] font-bold uppercase mb-2 tracking-wider">{t('withdraw.walletAddress')} ({activeNetwork})</div>
                     <input
                         type="text"
                         value={address}
@@ -168,28 +170,30 @@ export default function WithdrawModal({ onClose }: { onClose: () => void }) {
                         }}
                         disabled={loading}
                         placeholder={getAddressPlaceholder(activeNetwork)}
-                        className="w-full bg-[#1C2333] border border-[#30363D] focus:border-[#00D26A] rounded-xl px-4 py-3.5 text-white font-mono text-sm focus:outline-none transition-colors disabled:opacity-50"
+                        className="w-full glass-card border-white/[0.08] focus:border-[#00E676]/40 rounded-xl px-4 py-3.5 text-[#F8FAFC] font-mono text-sm focus:outline-none transition-all duration-200 disabled:opacity-40 placeholder:text-[#64748B]/30"
                     />
                 </div>
 
+                {/* Error */}
                 {error && (
-                    <div className="p-3 rounded-lg bg-[#FF4444]/10 border border-[#FF4444]/30 text-[#FF4444] text-xs font-semibold text-center animate-in fade-in zoom-in-95 duration-200">
+                    <div className="p-3 rounded-xl glass-card border-[#FF5252]/30 text-[#FF5252] text-xs font-semibold text-center glow-red animate-shake">
                         {error}
                     </div>
                 )}
 
+                {/* Buttons */}
                 <div className="grid grid-cols-2 gap-3 pt-4">
                     <button
                         onClick={onClose}
                         disabled={loading}
-                        className="py-3.5 rounded-xl border border-[#30363D] text-[#8B949E] font-semibold hover:bg-[#1C2333] transition-colors disabled:opacity-50"
+                        className="py-3.5 rounded-xl glass-card text-[#94A3B8] font-semibold transition-all hover:bg-white/[0.04] active:scale-95 disabled:opacity-40"
                     >
                         {t('withdraw.cancel')}
                     </button>
                     <button
                         onClick={handleSubmit}
                         disabled={loading || !amount || !address}
-                        className="py-3.5 rounded-xl bg-[#00D26A] text-black font-semibold hover:brightness-110 active:scale-95 transition-all flex items-center justify-center disabled:opacity-50 disabled:active:scale-100"
+                        className="py-3.5 rounded-xl bg-gradient-to-r from-[#00E676] to-[#00C853] text-black font-bold active:scale-95 transition-all flex items-center justify-center disabled:opacity-40 disabled:active:scale-100 shadow-[0_4px_20px_rgba(0,230,118,0.25)]"
                     >
                         {loading ? <Loader2 className="animate-spin" size={20} /> : t('withdraw.withdrawBtn')}
                     </button>

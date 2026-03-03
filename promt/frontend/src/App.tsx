@@ -129,7 +129,7 @@ function useTradeEngine() {
 // ═══════════════════════════════════════════
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => (
-  <div className="flex flex-col h-[100dvh] overflow-hidden bg-bg-main text-text-main">
+  <div className="flex flex-col h-[100dvh] overflow-hidden bg-bg-main text-text-main" style={{ background: 'linear-gradient(180deg, #0B0F19 0%, #060A13 100%)' }}>
     <Header />
     <PageContainer>
       {children}

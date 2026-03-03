@@ -33,14 +33,12 @@ export default function DepositModal({ onClose }: { onClose: () => void }) {
         setCopiedMemo(false);
 
         MockAPI.getDepositAddress(activeNetwork).then((data) => {
-            // Only apply if this is still the latest request
             if (currentRequestId !== requestIdRef.current) return;
             setAddress(data.address);
             setMemo(data.memo);
             setLoading(false);
         });
 
-        // Start polling for deposit confirmation
         if (pollRef.current) clearInterval(pollRef.current);
         pollRef.current = setInterval(async () => {
             if (currentRequestId !== requestIdRef.current) return;
@@ -73,20 +71,20 @@ export default function DepositModal({ onClose }: { onClose: () => void }) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 bg-[#1C2333] flex flex-col w-full h-full animate-in slide-in-from-bottom duration-300">
+        <div className="fixed inset-0 z-50 flex flex-col w-full h-full animate-slide-in-bottom" style={{ background: 'linear-gradient(180deg, #0B0F19 0%, #060A13 100%)' }}>
 
             {/* Header */}
             <div className="flex justify-between items-start px-5 pt-6 pb-4">
                 <div>
-                    <h3 className="text-[22px] font-bold text-white tracking-wide mb-1.5 shadow-sm">
+                    <h3 className="text-[22px] font-bold text-[#F8FAFC] tracking-wide mb-1.5">
                         {t('deposit.title')}
                     </h3>
-                    <div className="text-[11px] font-semibold text-[#8B949E] tracking-widest uppercase">
+                    <div className="text-[11px] font-semibold text-[#64748B] tracking-widest uppercase">
                         {NETWORKS.join(' · ')}
                     </div>
                 </div>
-                <button onClick={onClose} className="p-1.5 rounded-full hover:bg-[#161B22] transition-colors text-[#8B949E] hover:text-white mt-0.5">
-                    <X size={22} />
+                <button onClick={onClose} className="p-2 rounded-xl glass-card transition-all text-[#94A3B8] hover:text-white active:scale-90">
+                    <X size={20} />
                 </button>
             </div>
 
@@ -94,7 +92,7 @@ export default function DepositModal({ onClose }: { onClose: () => void }) {
             <div className="px-5 pb-8 overflow-y-auto no-scrollbar flex-1 flex flex-col">
 
                 <div className="mb-6 mt-2">
-                    <div className="text-[11px] text-[#8B949E] mb-3">{t('deposit.selectNetwork')}</div>
+                    <div className="text-[11px] text-[#64748B] mb-3 font-bold uppercase tracking-wider">{t('deposit.selectNetwork')}</div>
                     <div className="flex flex-wrap gap-2">
                         {NETWORKS.map((net) => (
                             <button
@@ -103,9 +101,9 @@ export default function DepositModal({ onClose }: { onClose: () => void }) {
                                     setActiveNetwork(net);
                                     hapticFeedback?.selectionChanged();
                                 }}
-                                className={`px-4 py-2 text-xs font-semibold rounded-xl transition-all ${activeNetwork === net
-                                    ? 'border border-[#00D26A] text-[#00D26A] bg-transparent'
-                                    : 'bg-[#161B22] text-[#8B949E] hover:text-white border border-transparent'
+                                className={`px-4 py-2 text-xs font-bold rounded-xl transition-all duration-200 active:scale-95 ${activeNetwork === net
+                                    ? 'bg-gradient-to-r from-[#00E676] to-[#00C853] text-black shadow-[0_2px_10px_rgba(0,230,118,0.2)]'
+                                    : 'glass-card text-[#94A3B8] hover:text-white'
                                     }`}
                             >
                                 {net}
@@ -114,32 +112,32 @@ export default function DepositModal({ onClose }: { onClose: () => void }) {
                     </div>
                 </div>
 
-                <div className="bg-[#161B22]/60 border border-[#30363D]/40 rounded-3xl p-6 flex-1 flex flex-col">
+                <div className="glass-card-elevated rounded-3xl p-6 flex-1 flex flex-col">
                     <div className="text-center flex-1 flex flex-col">
-                        <div className="text-sm font-bold text-white mb-8 uppercase tracking-wider">
-                            {activeNetwork} <span className="text-[#8B949E]">· {activeNetwork === 'TON' ? 'THE OPEN NETWORK' : 'NETWORK'}</span>
+                        <div className="text-sm font-bold text-[#F8FAFC] mb-8 uppercase tracking-wider">
+                            {activeNetwork} <span className="text-[#64748B]">· {activeNetwork === 'TON' ? 'THE OPEN NETWORK' : 'NETWORK'}</span>
                         </div>
 
                         {/* Deposit Status Indicator */}
                         {depositStatus === 'confirmed' ? (
-                            <div className="flex items-center justify-center gap-2 mb-5 py-2.5 px-4 rounded-xl bg-[#00D26A]/10 border border-[#00D26A]/30">
-                                <CheckCircle2 size={16} className="text-[#00D26A]" />
-                                <span className="text-[13px] font-semibold text-[#00D26A]">Платёж зачислен!</span>
+                            <div className="flex items-center justify-center gap-2 mb-5 py-3 px-4 rounded-xl glass-card border-[#00E676]/30 glow-green animate-scale-in">
+                                <CheckCircle2 size={16} className="text-[#00E676]" />
+                                <span className="text-[13px] font-semibold text-[#00E676]">Платёж зачислен!</span>
                             </div>
                         ) : depositStatus === 'pending' ? (
-                            <div className="flex items-center justify-center gap-2 mb-5 py-2.5 px-4 rounded-xl bg-[#F0B429]/10 border border-[#F0B429]/30 animate-pulse">
-                                <Clock size={16} className="text-[#F0B429]" />
-                                <span className="text-[13px] font-semibold text-[#F0B429]">Ожидание платежа...</span>
+                            <div className="flex items-center justify-center gap-2 mb-5 py-3 px-4 rounded-xl glass-card border-[#FBBF24]/30 animate-pulse">
+                                <Clock size={16} className="text-[#FBBF24]" />
+                                <span className="text-[13px] font-semibold text-[#FBBF24]">Ожидание платежа...</span>
                             </div>
                         ) : (
-                            <div className="text-[13px] text-[#8B949E] mb-5">
+                            <div className="text-[13px] text-[#64748B] mb-5">
                                 {t('deposit.scanToDeposit')}
                             </div>
                         )}
 
-                        <div className="inline-flex items-center justify-center p-4 rounded-[2rem] bg-white mb-8 w-56 h-56 mx-auto relative shadow-sm">
+                        <div className="inline-flex items-center justify-center p-4 rounded-3xl bg-white mb-8 w-56 h-56 mx-auto relative shadow-[0_8px_30px_rgba(0,0,0,0.3)]">
                             {loading || !address ? (
-                                <div className="absolute inset-0 flex items-center justify-center bg-white rounded-[2rem]">
+                                <div className="absolute inset-0 flex items-center justify-center bg-white rounded-3xl">
                                     <Loader2 className="animate-spin text-black" size={36} />
                                 </div>
                             ) : (
@@ -153,13 +151,13 @@ export default function DepositModal({ onClose }: { onClose: () => void }) {
 
                         <div className="space-y-4 w-full max-w-sm mx-auto">
                             {/* Deposit Address */}
-                            <div className="text-[11px] text-[#8B949E] uppercase tracking-wider text-center font-bold">{t('deposit.depositAddress')}</div>
+                            <div className="text-[11px] text-[#64748B] uppercase tracking-wider text-center font-bold">{t('deposit.depositAddress')}</div>
 
-                            <div className="relative bg-[#11141A] rounded-2xl p-4 text-left border border-[#30363D]/40 shadow-inner min-h-[72px] flex items-center">
+                            <div className="relative glass-card rounded-2xl p-4 text-left min-h-[72px] flex items-center">
                                 {loading ? (
-                                    <div className="w-2/3 h-4 bg-[#30363D] animate-pulse rounded"></div>
+                                    <div className="w-2/3 h-4 skeleton" />
                                 ) : (
-                                    <div className="font-mono text-sm text-white pr-32 break-all leading-relaxed">
+                                    <div className="font-mono text-sm text-[#F8FAFC] pr-28 break-all leading-relaxed">
                                         {address}
                                     </div>
                                 )}
@@ -167,24 +165,26 @@ export default function DepositModal({ onClose }: { onClose: () => void }) {
                                 <button
                                     onClick={handleCopy}
                                     disabled={loading}
-                                    className={`absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl transition-all active:scale-95 font-bold text-[13px] ${copied ? 'bg-[#1C2333] text-[#00D26A] border border-[#00D26A]' : 'bg-[#00D26A] text-black hover:brightness-110 shadow-sm'
+                                    className={`absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl transition-all duration-300 active:scale-90 font-bold text-[13px] ${copied
+                                        ? 'glass-card text-[#00E676] border-[#00E676]/40 shadow-[0_0_12px_rgba(0,230,118,0.2)]'
+                                        : 'bg-gradient-to-r from-[#00E676] to-[#00C853] text-black shadow-[0_2px_10px_rgba(0,230,118,0.2)]'
                                         }`}
                                 >
-                                    {copied ? <CheckCircle2 size={16} /> : <Copy size={16} />}
+                                    {copied ? <CheckCircle2 size={16} className="animate-scale-in" /> : <Copy size={16} />}
                                     {t('deposit.copy')}
                                 </button>
                             </div>
 
                             {/* Memo / Comment */}
-                            <div className="text-[11px] text-[#F0B429] uppercase tracking-wider text-center font-bold mt-4">
+                            <div className="text-[11px] text-[#FBBF24] uppercase tracking-wider text-center font-bold mt-4">
                                 ⚠️ ОБЯЗАТЕЛЬНО УКАЖИТЕ MEMO / КОММЕНТАРИЙ
                             </div>
 
-                            <div className="relative bg-[#11141A] rounded-2xl p-4 text-left border border-[#F0B429]/40 shadow-inner min-h-[56px] flex items-center">
+                            <div className="relative glass-card rounded-2xl p-4 text-left border-[#FBBF24]/20 min-h-[56px] flex items-center">
                                 {loading ? (
-                                    <div className="w-1/2 h-4 bg-[#30363D] animate-pulse rounded"></div>
+                                    <div className="w-1/2 h-4 skeleton" />
                                 ) : (
-                                    <div className="font-mono text-base text-[#F0B429] font-bold pr-28 break-all leading-relaxed">
+                                    <div className="font-mono text-base text-[#FBBF24] font-bold pr-28 break-all leading-relaxed">
                                         {memo}
                                     </div>
                                 )}
@@ -192,17 +192,19 @@ export default function DepositModal({ onClose }: { onClose: () => void }) {
                                 <button
                                     onClick={handleCopyMemo}
                                     disabled={loading}
-                                    className={`absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl transition-all active:scale-95 font-bold text-[13px] ${copiedMemo ? 'bg-[#1C2333] text-[#F0B429] border border-[#F0B429]' : 'bg-[#F0B429] text-black hover:brightness-110 shadow-sm'
+                                    className={`absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl transition-all duration-300 active:scale-90 font-bold text-[13px] ${copiedMemo
+                                        ? 'glass-card text-[#FBBF24] border-[#FBBF24]/40'
+                                        : 'bg-[#FBBF24] text-black shadow-[0_2px_10px_rgba(251,191,36,0.2)]'
                                         }`}
                                 >
-                                    {copiedMemo ? <CheckCircle2 size={16} /> : <Copy size={16} />}
+                                    {copiedMemo ? <CheckCircle2 size={16} className="animate-scale-in" /> : <Copy size={16} />}
                                     {t('deposit.copy')}
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <div className="text-center text-[12px] text-[#F0B429] px-4 opacity-80 leading-relaxed pt-8 mt-auto font-medium">
+                    <div className="text-center text-[12px] text-[#FBBF24]/80 px-4 leading-relaxed pt-8 mt-auto font-medium">
                         Переводите средства ТОЛЬКО в сети {activeNetwork}. Без указания Memo платёж не будет зачислен автоматически.
                     </div>
                 </div>
