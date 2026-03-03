@@ -1,4 +1,4 @@
-import { Grid, Wallet, Users, BarChart3, Settings } from 'lucide-react';
+import { Grid, Wallet, ArrowRightLeft, Users, BarChart3, Settings } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import clsx from 'clsx';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -9,6 +9,7 @@ export default function BottomNav() {
     const tabs = [
         { path: '/', label: t('nav.home'), icon: Grid },
         { path: '/wallet', label: t('nav.wallet'), icon: Wallet },
+        { path: '/exchange', label: t('nav.exchange'), icon: ArrowRightLeft },
         { path: '/referrals', label: t('nav.referrals'), icon: Users },
         { path: '/stats', label: t('nav.stats'), icon: BarChart3 },
         { path: '/settings', label: t('nav.settings'), icon: Settings }

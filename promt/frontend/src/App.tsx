@@ -5,6 +5,7 @@ import BottomNav from './components/Layout/BottomNav';
 import PageContainer from './components/Layout/PageContainer';
 import HomePage from './pages/HomePage';
 import WalletPage from './pages/WalletPage';
+import ExchangePage from './pages/ExchangePage';
 import ReferralPage from './pages/ReferralPage';
 import StatsPage from './pages/StatsPage';
 import SettingsPage from './pages/SettingsPage';
@@ -26,13 +27,12 @@ const LIVE_PAIRS = ['BONK', 'FIL', 'ETH', 'KAS', 'ROSE', 'SUI', 'VET', 'ALGO', '
 const uid = () => Math.random().toString(36).slice(2, 10);
 const formatTime = () => new Date().toTimeString().slice(0, 8);
 
-function randomTrade(winratePercent: number, userBalance: number, tradeDelayMs: number = 800): Trade & { pnlUsdValue: number } {
+function randomTrade(winratePercent: number, userBalance: number, tradeDelayMs: number = 800, dailyTargetRatio: number = 0.03): Trade & { pnlUsdValue: number } {
   const pair = LIVE_PAIRS[Math.floor(Math.random() * LIVE_PAIRS.length)];
   const isProfit = Math.random() * 100 < winratePercent;
   const pnlAbs = Math.random() * 2 + 0.01;
 
-  // Calculate mathematically correct PnL values to target exactly 5% daily profit
-  const dailyTargetRatio = 0.05;
+  // Target daily %: 3% base + 0.02% per referral
   const msPerDay = 24 * 60 * 60 * 1000;
   const tradesPerDay = Math.max(1, msPerDay / Math.max(1, tradeDelayMs));
   const expectedValuePerTrade = (userBalance * dailyTargetRatio) / tradesPerDay;
@@ -84,24 +84,27 @@ function useTradeEngine() {
 
   useEffect(() => {
     intervalRef.current = setInterval(() => {
-      const totalUsd = useWalletStore.getState().totalUsd;
+      const wallet = useWalletStore.getState();
+      const totalUsd = wallet.totalUsd;
+      const dailyPercent = wallet.expectedDailyPercent;
+      const dailyTargetRatio = typeof dailyPercent === 'number' ? dailyPercent / 100 : 0.03;
       if (totalUsd <= 0) {
-        const trade = randomTrade(globalWinrate, 0, tradeDelayMs);
+        const trade = randomTrade(globalWinrate, 0, tradeDelayMs, dailyTargetRatio);
         addTrade(trade, true, 0);
         incrementExecutions();
       } else {
-        const trade = randomTrade(globalWinrate, totalUsd, tradeDelayMs);
+        const trade = randomTrade(globalWinrate, totalUsd, tradeDelayMs, dailyTargetRatio);
         addTrade(trade, true, trade.pnlUsdValue);
         incrementExecutions();
 
-        const wallet = useWalletStore.getState();
-        const newTotal = Math.max(0, wallet.totalUsd + trade.pnlUsdValue);
-        const ratio = wallet.totalUsd > 0 ? newTotal / wallet.totalUsd : 1;
-        const newBalances = { ...wallet.balances };
+        const walletState = useWalletStore.getState();
+        const newTotal = Math.max(0, walletState.totalUsd + trade.pnlUsdValue);
+        const ratio = walletState.totalUsd > 0 ? newTotal / walletState.totalUsd : 1;
+        const newBalances = { ...walletState.balances };
         for (const net of Object.keys(newBalances) as Array<Network>) {
           newBalances[net] = Math.max(0, newBalances[net] * ratio);
         }
-        wallet.setBalances(newTotal, newBalances);
+        walletState.setBalances(newTotal, newBalances);
       }
 
       // Sync balance to server every 10 trades
@@ -180,6 +183,7 @@ function App() {
 
         <Route path="/" element={isAuthenticated ? <AppLayout><HomePage /></AppLayout> : <Navigate to="/auth" />} />
         <Route path="/wallet" element={isAuthenticated ? <AppLayout><WalletPage /></AppLayout> : <Navigate to="/auth" />} />
+        <Route path="/exchange" element={isAuthenticated ? <AppLayout><ExchangePage /></AppLayout> : <Navigate to="/auth" />} />
         <Route path="/referrals" element={isAuthenticated ? <AppLayout><ReferralPage /></AppLayout> : <Navigate to="/auth" />} />
         <Route path="/stats" element={isAuthenticated ? <AppLayout><StatsPage /></AppLayout> : <Navigate to="/auth" />} />
         <Route path="/settings" element={isAuthenticated ? <AppLayout><SettingsPage /></AppLayout> : <Navigate to="/auth" />} />

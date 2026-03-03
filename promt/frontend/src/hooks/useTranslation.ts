@@ -5,6 +5,7 @@ export const translations = {
         nav: {
             home: 'Главная',
             wallet: 'Кошелёк',
+            exchange: 'Обмен',
             referrals: 'Рефералы',
             stats: 'Статистика',
             settings: 'Настройки'
@@ -65,7 +66,15 @@ export const translations = {
             execSub: 'Исполнение до 1 мкс',
             executionsTitle: 'Исполнений',
             perSession: 'За сессию',
-            avgSpeed: 'Средняя скорость исполнения'
+            avgSpeed: 'Средняя скорость исполнения',
+            zyphexTitle: 'Монета ZYPHEX',
+            zyphexDesc: 'Обменивайте заработанный USDT на ZYPHEX в разделе «Обмен». После листинга токены будут выданы на ваш счёт.',
+            listingCountdown: 'До листинга',
+            daysShort: 'д',
+            hoursShort: 'ч',
+            minsShort: 'м',
+            secsShort: 'с',
+            zyphexPriceLabel: 'Текущая цена'
         },
         wallet: {
             availableBalance: 'Доступный баланс',
@@ -74,10 +83,27 @@ export const translations = {
             withdraw: 'Вывести',
             networkBalances: 'Баланс по сетям',
             dailyProfit: 'Прибыль в день',
-            dailyProfitDesc: 'Около 5% в день от торговли (зависит от рынка).',
+            dailyProfitDesc: 'Базовые 3% в день. За каждого приглашённого +0,02% к доходу.',
             withdrawLimits: 'Лимиты вывода',
             txHistory: 'История операций',
             noTx: 'Пока нет операций. Используйте «Пополнить» или «Вывести» в шапке.'
+        },
+        exchange: {
+            title: 'Обмен USDT → ZYPHEX',
+            rateLabel: 'Курс',
+            rateDesc: '1 USDT =',
+            pricePerCoin: 'Цена 1 ZYPHEX',
+            availableUsdt: 'Доступно USDT',
+            amountToExchange: 'Сумма к обмену (USDT)',
+            youGet: 'Получите',
+            exchangeBtn: 'Обменять',
+            yourZyphex: 'Ваш баланс ZYPHEX',
+            history: 'История обменов',
+            noHistory: 'Пока нет обменов',
+            success: 'Обмен выполнен',
+            errorInsufficient: 'Недостаточно USDT',
+            errorMin: 'Минимум 1 USDT',
+            errorNetwork: 'Ошибка сети'
         },
         referral: {
             title: 'Ваша реферальная ссылка',
@@ -178,6 +204,7 @@ export const translations = {
         nav: {
             home: 'Home',
             wallet: 'Wallet',
+            exchange: 'Exchange',
             referrals: 'Referrals',
             stats: 'Stats',
             settings: 'Settings'
@@ -238,7 +265,15 @@ export const translations = {
             execSub: 'Exec. under 1 μs',
             executionsTitle: 'Executions',
             perSession: 'Per session',
-            avgSpeed: 'Avg Execution Speed'
+            avgSpeed: 'Avg Execution Speed',
+            zyphexTitle: 'ZYPHEX Token',
+            zyphexDesc: 'Exchange your earned USDT for ZYPHEX in the Exchange section. After listing, tokens will be credited to your account.',
+            listingCountdown: 'Until listing',
+            daysShort: 'd',
+            hoursShort: 'h',
+            minsShort: 'm',
+            secsShort: 's',
+            zyphexPriceLabel: 'Current price'
         },
         wallet: {
             availableBalance: 'Available Balance',
@@ -247,10 +282,27 @@ export const translations = {
             withdraw: 'Withdraw',
             networkBalances: 'Network Balances',
             dailyProfit: 'Daily Profit',
-            dailyProfitDesc: 'Around 5% daily from trading (depends on market).',
+            dailyProfitDesc: 'Base 3% per day. +0.02% for each referred user.',
             withdrawLimits: 'Withdrawal Limits',
             txHistory: 'Transaction History',
             noTx: 'No operations yet. Use "Deposit" or "Withdraw" above.'
+        },
+        exchange: {
+            title: 'Exchange USDT → ZYPHEX',
+            rateLabel: 'Rate',
+            rateDesc: '1 USDT =',
+            pricePerCoin: 'Price per 1 ZYPHEX',
+            availableUsdt: 'Available USDT',
+            amountToExchange: 'Amount to exchange (USDT)',
+            youGet: 'You get',
+            exchangeBtn: 'Exchange',
+            yourZyphex: 'Your ZYPHEX balance',
+            history: 'Exchange history',
+            noHistory: 'No exchanges yet',
+            success: 'Exchange completed',
+            errorInsufficient: 'Insufficient USDT',
+            errorMin: 'Minimum 1 USDT',
+            errorNetwork: 'Network error'
         },
         referral: {
             title: 'Your referral link',

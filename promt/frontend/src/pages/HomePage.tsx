@@ -1,10 +1,42 @@
-import { Zap, Clock, Activity } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Zap, Clock, Activity, Coins } from 'lucide-react';
 import { useTranslation } from '../hooks/useTranslation';
 import { useTradeStore } from '../store/tradeStore';
+import { CONFIG } from '../config';
+import { MockAPI } from '../api/mockServices';
+
+function useListingCountdown() {
+    const [left, setLeft] = useState<{ d: number; h: number; m: number; s: number } | null>(null);
+    useEffect(() => {
+        const end = new Date(CONFIG.ZYPHEX_LISTING_DATE).getTime();
+        const tick = () => {
+            const now = Date.now();
+            const diff = Math.max(0, end - now);
+            if (diff === 0) {
+                setLeft(null);
+                return;
+            }
+            const d = Math.floor(diff / (24 * 60 * 60 * 1000));
+            const h = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+            const m = Math.floor((diff % (60 * 60 * 1000)) / (60 * 1000));
+            const s = Math.floor((diff % (60 * 1000)) / 1000);
+            setLeft({ d, h, m, s });
+        };
+        tick();
+        const id = setInterval(tick, 1000);
+        return () => clearInterval(id);
+    }, []);
+    return left;
+}
 
 export default function HomePage() {
     const { t } = useTranslation();
     const { trades, metrics } = useTradeStore();
+    const countdown = useListingCountdown();
+    const [zyphexRate, setZyphexRate] = useState<number | null>(null);
+    useEffect(() => {
+        MockAPI.getZyphexRate().then((r) => setZyphexRate(r)).catch(() => setZyphexRate(null));
+    }, []);
 
     return (
         <div className="space-y-6 pb-4 stagger-children">
@@ -90,6 +122,39 @@ export default function HomePage() {
                 <div className="mt-3 px-4 py-3 glass-card glow-green rounded-xl text-[#00E676] text-sm font-medium flex items-center justify-between">
                     <span>{t('home.avgSpeed')}</span>
                     <span className="font-mono text-shadow-green tabular-nums">~{metrics.avgExecutionNs} {t('home.ns')}</span>
+                </div>
+            </section>
+
+            {/* ZYPHEX & Listing countdown */}
+            <section>
+                <div className="flex items-center gap-2 mb-3">
+                    <div className="w-7 h-7 rounded-lg bg-[#00E676]/10 flex items-center justify-center">
+                        <Coins className="w-4 h-4 text-[#00E676]" />
+                    </div>
+                    <h2 className="text-lg font-semibold text-[#F8FAFC]">{t('home.zyphexTitle')}</h2>
+                </div>
+                <div className="glass-card rounded-2xl p-5 space-y-4">
+                    <p className="text-sm text-[#94A3B8] leading-relaxed">
+                        {t('home.zyphexDesc')}
+                    </p>
+                    {zyphexRate != null && zyphexRate > 0 && (
+                        <p className="text-sm text-[#00E676] font-medium">
+                            {t('home.zyphexPriceLabel')}: 1 ZYPHEX = ${(1 / zyphexRate).toFixed((1 / zyphexRate) < 1 ? 4 : 2)}
+                        </p>
+                    )}
+                    {countdown !== null && (
+                        <div className="pt-3 border-t border-white/[0.06]">
+                            <div className="text-[10px] font-bold uppercase text-[#64748B] tracking-wider mb-2">
+                                {t('home.listingCountdown')}
+                            </div>
+                            <div className="font-mono text-xl text-[#00E676] tabular-nums flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                                <span><span className="font-bold text-white">{countdown.d}</span> {t('home.daysShort')}</span>
+                                <span><span className="font-bold text-white">{countdown.h}</span> {t('home.hoursShort')}</span>
+                                <span><span className="font-bold text-white">{countdown.m}</span> {t('home.minsShort')}</span>
+                                <span><span className="font-bold text-white">{countdown.s}</span> {t('home.secsShort')}</span>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </section>
         </div>

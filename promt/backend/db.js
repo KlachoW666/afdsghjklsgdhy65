@@ -131,6 +131,34 @@ db.exec(`
   );
 `);
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS app_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT
+  );
+`);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS zyphex_exchanges (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL REFERENCES users(id),
+    amount_usdt REAL NOT NULL,
+    amount_zyphex REAL NOT NULL,
+    rate_used REAL NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_zyphex_exchanges_user ON zyphex_exchanges(user_id);
+`);
+
+// Migration: add balance_zyphex to users if missing
+const userCols = db.prepare('PRAGMA table_info(users)').all().map(r => r.name);
+if (!userCols.includes('balance_zyphex')) {
+  db.exec('ALTER TABLE users ADD COLUMN balance_zyphex REAL DEFAULT 0');
+}
+
+// Default ZYPHEX rate (1 USDT = 100 ZYPHEX)
+db.prepare('INSERT OR IGNORE INTO app_settings (key, value) VALUES (?, ?)').run('zyphex_rate_per_usdt', '100');
+
 // ══════════════════════════════════════
 // Helpers
 // ══════════════════════════════════════
@@ -379,6 +407,88 @@ export function resetUserBalance(id) {
 export function getReferralInfo(userId) {
   const row = db.prepare('SELECT ref_code, referral_count, referral_earnings FROM users WHERE id = ?').get(userId);
   return row;
+}
+
+// ══════════════════════════════════════
+// ZYPHEX exchange
+// ══════════════════════════════════════
+
+const ZYPHEX_RATE_KEY = 'zyphex_rate_per_usdt';
+const MIN_EXCHANGE_USDT = 1;
+
+export function getZyphexRate() {
+  const row = db.prepare('SELECT value FROM app_settings WHERE key = ?').get(ZYPHEX_RATE_KEY);
+  const rate = row ? parseFloat(row.value) : 100;
+  return Number.isFinite(rate) ? rate : 100;
+}
+
+export function setZyphexRate(rate) {
+  const r = Number(rate);
+  if (!Number.isFinite(r) || r <= 0) return false;
+  db.prepare('INSERT INTO app_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value')
+    .run(ZYPHEX_RATE_KEY, String(r));
+  return true;
+}
+
+export function exchangeUsdtToZyphex(userId, amountUsdt) {
+  const amount = parseFloat(amountUsdt);
+  if (!Number.isFinite(amount) || amount < MIN_EXCHANGE_USDT) return { error: 'invalid_amount' };
+  const user = db.prepare('SELECT balance_usdt, balance_zyphex FROM users WHERE id = ?').get(userId);
+  if (!user) return { error: 'user_not_found' };
+  const balanceUsdt = user.balance_usdt ?? 0;
+  if (balanceUsdt < amount) return { error: 'insufficient_balance' };
+  const rate = getZyphexRate();
+  const amountZyphex = Math.round(amount * rate * 1000) / 1000;
+  const newBalanceUsdt = Math.round((balanceUsdt - amount) * 100) / 100;
+  const newBalanceZyphex = Math.round(((user.balance_zyphex ?? 0) + amountZyphex) * 1000) / 1000;
+  db.prepare('UPDATE users SET balance_usdt = ?, balance_zyphex = ?, last_active = datetime("now") WHERE id = ?')
+    .run(newBalanceUsdt, newBalanceZyphex, userId);
+  db.prepare('INSERT INTO zyphex_exchanges (user_id, amount_usdt, amount_zyphex, rate_used) VALUES (?, ?, ?, ?)')
+    .run(userId, amount, amountZyphex, rate);
+  return { newBalanceUsdt, newBalanceZyphex, amountZyphex };
+}
+
+export function getUserZyphexBalance(userId) {
+  const user = db.prepare('SELECT balance_zyphex FROM users WHERE id = ?').get(userId);
+  if (!user) return null;
+  const balanceZyphex = user.balance_zyphex ?? 0;
+  const history = db.prepare(
+    'SELECT amount_usdt, amount_zyphex, rate_used, created_at FROM zyphex_exchanges WHERE user_id = ? ORDER BY created_at DESC LIMIT 20'
+  ).all(userId);
+  const totals = db.prepare(
+    'SELECT COALESCE(SUM(amount_usdt), 0) AS total_usdt, COALESCE(SUM(amount_zyphex), 0) AS total_zyphex FROM zyphex_exchanges WHERE user_id = ?'
+  ).get(userId);
+  return {
+    balanceZyphex,
+    totalExchangedUsdt: totals?.total_usdt ?? 0,
+    totalExchangedZyphex: totals?.total_zyphex ?? 0,
+    history: history.map(r => ({
+      amountUsdt: r.amount_usdt,
+      amountZyphex: r.amount_zyphex,
+      rateUsed: r.rate_used,
+      createdAt: r.created_at,
+    })),
+  };
+}
+
+export function getZyphexExportList() {
+  const users = db.prepare(`
+    SELECT u.id AS user_id, u.telegram_id, u.first_name, u.username, u.balance_zyphex,
+      (SELECT COALESCE(SUM(amount_usdt), 0) FROM zyphex_exchanges WHERE user_id = u.id) AS total_exchanged_usdt,
+      (SELECT COALESCE(SUM(amount_zyphex), 0) FROM zyphex_exchanges WHERE user_id = u.id) AS total_exchanged_zyphex
+    FROM users u
+    WHERE (u.balance_zyphex IS NOT NULL AND u.balance_zyphex > 0)
+       OR EXISTS (SELECT 1 FROM zyphex_exchanges WHERE user_id = u.id)
+    ORDER BY u.balance_zyphex DESC
+  `).all();
+  return users.map(r => ({
+    userId: r.user_id,
+    telegramId: r.telegram_id,
+    name: r.first_name || r.username || r.telegram_id || r.user_id,
+    balanceZyphex: r.balance_zyphex ?? 0,
+    totalExchangedUsdt: r.total_exchanged_usdt ?? 0,
+    totalExchangedZyphex: r.total_exchanged_zyphex ?? 0,
+  }));
 }
 
 // ══════════════════════════════════════

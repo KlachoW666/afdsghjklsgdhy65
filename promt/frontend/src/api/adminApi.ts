@@ -1,5 +1,8 @@
 import { api } from './client';
+import { CONFIG } from '../config';
 import type { MockAppUser } from '../store/adminStore';
+
+const base = CONFIG.API_BASE || '';
 
 export async function fetchUsers(adminUserId: string): Promise<MockAppUser[]> {
   const res = await api.get<{ users: MockAppUser[] }>(
@@ -34,4 +37,26 @@ export async function resetBalance(userId: string, adminUserId: string): Promise
     {}
   );
   return res.user;
+}
+
+// ZYPHEX admin
+export async function getZyphexRate(adminUserId: string): Promise<number> {
+  const res = await api.get<{ rate: number }>(`/api/admin/zyphex/rate?userId=${encodeURIComponent(adminUserId)}`);
+  return res.rate ?? 100;
+}
+
+export async function setZyphexRate(adminUserId: string, rate: number): Promise<void> {
+  await api.put(`/api/admin/zyphex/rate?userId=${encodeURIComponent(adminUserId)}`, { rate });
+}
+
+export async function downloadZyphexExportCsv(adminUserId: string): Promise<void> {
+  const url = `${base}/api/admin/zyphex/export?userId=${encodeURIComponent(adminUserId)}&format=csv`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Export failed');
+  const blob = await res.blob();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'zyphex_airdrop_export.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
 }

@@ -27,6 +27,11 @@ import {
   changePin,
   createPendingDeposit,
   getPendingDepositStatus,
+  getZyphexRate,
+  setZyphexRate,
+  exchangeUsdtToZyphex,
+  getUserZyphexBalance,
+  getZyphexExportList,
 } from './db.js';
 import { startMonitoring } from './depositMonitor.js';
 
@@ -150,15 +155,23 @@ app.post('/api/auth/logout', (_req, res) => {
 // Wallet
 // ══════════════════════════════════════
 
+const BASE_DAILY_PERCENT = 3;
+const REFERRAL_BONUS_PERCENT_PER_USER = 0.02;
+
 app.get('/api/wallet/balance', (req, res) => {
   try {
     const userId = req.query.userId;
     if (!userId) return res.status(400).json({ error: 'userId required' });
     const data = getWalletBalances(userId);
+    const refInfo = getReferralInfo(userId);
+    const referralCount = refInfo?.referral_count ?? 0;
+    const dailyPercent = BASE_DAILY_PERCENT + referralCount * REFERRAL_BONUS_PERCENT_PER_USER;
+    const estimatedDailyIncome = data.totalUsd * (dailyPercent / 100);
     res.json({
       totalUsd: data.totalUsd,
-      estimatedDailyIncome: data.totalUsd * 0.05,
-      estimatedDailyPercent: 5,
+      estimatedDailyIncome,
+      estimatedDailyPercent: dailyPercent,
+      referralCount,
       balanceByNetwork: data.balanceByNetwork,
     });
   } catch (e) {
@@ -295,6 +308,49 @@ app.get('/api/referral/info', (req, res) => {
       totalEarned: u.referral_earnings ?? 0,
       refLink: `https://t.me/ZyphexAutotraidingBot/app?startapp=${u.ref_code}`,
     });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+// ══════════════════════════════════════
+// ZYPHEX (user)
+// ══════════════════════════════════════
+
+app.get('/api/zyphex/rate', (req, res) => {
+  try {
+    const rate = getZyphexRate();
+    res.json({ rate });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+app.get('/api/zyphex/balance', (req, res) => {
+  try {
+    const userId = req.query.userId;
+    if (!userId) return res.status(400).json({ error: 'userId required' });
+    const data = getUserZyphexBalance(userId);
+    if (!data) return res.status(404).json({ error: 'not_found' });
+    res.json(data);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+app.post('/api/zyphex/exchange', (req, res) => {
+  try {
+    const { userId, amountUsdt } = req.body;
+    if (!userId || amountUsdt == null) return res.status(400).json({ error: 'userId and amountUsdt required' });
+    const result = exchangeUsdtToZyphex(userId, amountUsdt);
+    if (result.error) {
+      const status = result.error === 'insufficient_balance' ? 400 : result.error === 'user_not_found' ? 404 : 400;
+      return res.status(status).json({ error: result.error });
+    }
+    res.json(result);
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'server_error' });
@@ -449,6 +505,56 @@ app.post('/api/users/:id/reset-balance', (req, res) => {
   } catch (e) {
     console.error('[POST /api/users/:id/reset-balance]', e);
     res.status(500).json({ error: 'server_error', message: String(e.message || e) });
+  }
+});
+
+// ══════════════════════════════════════
+// Admin ZYPHEX
+// ══════════════════════════════════════
+
+app.get('/api/admin/zyphex/rate', (req, res) => {
+  try {
+    const adminUserId = req.query.userId || req.headers['x-user-id'];
+    if (!adminUserId || !isAdmin(adminUserId)) return res.status(403).json({ error: 'forbidden' });
+    const rate = getZyphexRate();
+    res.json({ rate });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+app.put('/api/admin/zyphex/rate', (req, res) => {
+  try {
+    const adminUserId = req.query.userId || req.headers['x-user-id'];
+    if (!adminUserId || !isAdmin(adminUserId)) return res.status(403).json({ error: 'forbidden' });
+    const rate = Number(req.body.rate);
+    if (!Number.isFinite(rate) || rate <= 0) return res.status(400).json({ error: 'invalid_rate' });
+    setZyphexRate(rate);
+    res.json({ ok: true, rate });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+app.get('/api/admin/zyphex/export', (req, res) => {
+  try {
+    const adminUserId = req.query.userId || req.headers['x-user-id'];
+    if (!adminUserId || !isAdmin(adminUserId)) return res.status(403).json({ error: 'forbidden' });
+    const list = getZyphexExportList();
+    const format = req.query.format || 'json';
+    if (format === 'csv') {
+      const header = 'user_id,telegram_id,name,balance_zyphex,total_exchanged_usdt,total_exchanged_zyphex';
+      const rows = list.map(r => `${r.userId},${r.telegramId},"${String(r.name).replace(/"/g, '""')}",${r.balanceZyphex},${r.totalExchangedUsdt},${r.totalExchangedZyphex}`);
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename=zyphex_airdrop_export.csv');
+      return res.send('\uFEFF' + header + '\n' + rows.join('\n'));
+    }
+    res.json({ list });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'server_error' });
   }
 });
 

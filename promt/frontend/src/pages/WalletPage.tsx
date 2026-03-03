@@ -53,7 +53,7 @@ export default function WalletPage() {
                         </div>
                         <div className="flex items-center gap-2 text-xs text-[#00E676]/80 mb-6 font-medium">
                             <TrendingUp size={14} />
-                            <span>{t('wallet.expectedDaily')} ~${formatCurrency(expectedDailyIncomeUsd).replace('$', '').replace('.', ',')} (~{expectedDailyPercent}%)</span>
+                            <span>{t('wallet.expectedDaily')} ${formatCurrency(expectedDailyIncomeUsd).replace('$', '').replace('.', ',')} ({expectedDailyPercent}%)</span>
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
@@ -95,7 +95,7 @@ export default function WalletPage() {
                             </div>
                             {t('wallet.dailyProfit')}
                         </div>
-                        <div className="text-2xl font-bold font-mono text-[#00E676] mb-3 text-shadow-green">~5%</div>
+                        <div className="text-2xl font-bold font-mono text-[#00E676] mb-3 text-shadow-green">{expectedDailyPercent}%</div>
                         <div className="text-[11px] text-[#64748B] leading-relaxed">
                             {t('wallet.dailyProfitDesc')}
                         </div>

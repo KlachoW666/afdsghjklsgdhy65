@@ -80,7 +80,7 @@ export const MockAPI = {
     },
 
     // --- WALLET ---
-    /** Fetch balance from backend — only overwrite if server has MORE (e.g. admin deposited) */
+    /** Fetch balance from backend — only overwrite if server has MORE (e.g. admin deposited). Always sync referralCount for daily % bonus. */
     async fetchBalance(): Promise<void> {
         const userId = useUserStore.getState().userId;
         if (!userId) return;
@@ -88,10 +88,12 @@ export const MockAPI = {
             const res = await api.get<{
                 totalUsd: number;
                 balanceByNetwork: Record<Network, number>;
+                referralCount?: number;
+                estimatedDailyPercent?: number;
+                estimatedDailyIncome?: number;
             }>(`/api/wallet/balance?userId=${encodeURIComponent(userId)}`);
             const wallet = useWalletStore.getState();
-            // Only replace if server balance is more than local (admin deposit case)
-            // Otherwise keep local balance (trade profits accumulated locally)
+            wallet.setReferralCount(res.referralCount ?? 0);
             if (res.totalUsd > wallet.totalUsd) {
                 wallet.setBalances(res.totalUsd, res.balanceByNetwork);
             }
@@ -113,6 +115,46 @@ export const MockAPI = {
         } catch {
             // Silent — will retry on next sync
         }
+    },
+
+    // --- ZYPHEX ---
+    async getZyphexRate(): Promise<number> {
+        const res = await api.get<{ rate: number }>('/api/zyphex/rate');
+        return res.rate ?? 100;
+    },
+    async getZyphexBalance(): Promise<{
+        balanceZyphex: number;
+        totalExchangedUsdt: number;
+        totalExchangedZyphex: number;
+        history: { amountUsdt: number; amountZyphex: number; rateUsed: number; createdAt: string }[];
+    } | null> {
+        const userId = useUserStore.getState().userId;
+        if (!userId) return null;
+        try {
+            return await api.get(`/api/zyphex/balance?userId=${encodeURIComponent(userId)}`);
+        } catch {
+            return null;
+        }
+    },
+    async exchangeUsdtToZyphex(amountUsdt: number): Promise<{
+        newBalanceUsdt: number;
+        newBalanceZyphex: number;
+        amountZyphex: number;
+    }> {
+        const userId = useUserStore.getState().userId;
+        if (!userId) throw new Error('not_authenticated');
+        const res = await api.post<{
+            newBalanceUsdt?: number;
+            newBalanceZyphex?: number;
+            amountZyphex?: number;
+            error?: string;
+        }>('/api/zyphex/exchange', { userId, amountUsdt });
+        if (res.error) throw new Error(res.error);
+        return {
+            newBalanceUsdt: res.newBalanceUsdt!,
+            newBalanceZyphex: res.newBalanceZyphex!,
+            amountZyphex: res.amountZyphex!,
+        };
     },
 
     async getDepositAddress(network: Network): Promise<{ address: string; memo: string }> {

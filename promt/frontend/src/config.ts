@@ -15,4 +15,7 @@ export const CONFIG = {
     // Default mock settings
     DEFAULT_WINRATE_PERCENT: 86.7,
     DEFAULT_TRADE_DELAY_MS: 500,
+
+    /** ZYPHEX listing date (ISO string). Countdown on Home shows time until this date. */
+    ZYPHEX_LISTING_DATE: '2026-04-05T00:00:00.000Z',
 };
