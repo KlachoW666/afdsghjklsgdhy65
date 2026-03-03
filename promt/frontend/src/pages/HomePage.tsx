@@ -17,12 +17,19 @@ function randomTrade(winratePercent: number, userBalance: number): Trade & { pnl
     const isProfit = Math.random() * 100 < winratePercent;
     const pnlAbs = Math.random() * 2 + 0.01;
 
-    // USD P&L scaled to user's balance: ~0.01-0.1% per trade
-    // With ~100 trades/day this yields ~5% daily
-    const scaleFactor = Math.max(userBalance, 100) * (0.0001 + Math.random() * 0.001);
-    const pnlUsdValue = isProfit ? scaleFactor : -scaleFactor * 0.6; // losses are smaller (winrate biased)
-    const pnlUsdAbs = Math.abs(pnlUsdValue);
+    // Base trade amount: 0.1–0.5% of user's balance (or $0.10–$0.50 if no balance)
+    const baseAmount = Math.max(userBalance, 100) * (0.001 + Math.random() * 0.004);
 
+    let pnlUsdValue: number;
+    if (isProfit) {
+        // Green trade: earn 5% of the trade amount
+        pnlUsdValue = baseAmount * 0.05;
+    } else {
+        // Red trade: lose the entire trade amount
+        pnlUsdValue = -baseAmount;
+    }
+
+    const pnlUsdAbs = Math.abs(pnlUsdValue);
     const pnl = isProfit ? `+${pnlAbs.toFixed(4)}` : `-${pnlAbs.toFixed(4)}`;
     const pnlUsd = isProfit ? `($${pnlUsdAbs.toFixed(4)})` : `($-${pnlUsdAbs.toFixed(4)})`;
     return {

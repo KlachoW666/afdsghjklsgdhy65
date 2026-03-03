@@ -1,8 +1,11 @@
 import { Calendar, BarChart2, TrendingUp, Percent } from 'lucide-react';
 import { useTranslation } from '../hooks/useTranslation';
+import { useTradeStore } from '../store/tradeStore';
+import { formatCurrency } from '../utils/formatters';
 
 export default function StatsPage() {
     const { t } = useTranslation();
+    const { stats } = useTradeStore();
 
     return (
         <div className="space-y-6">
@@ -17,24 +20,24 @@ export default function StatsPage() {
                 <div className="space-y-3">
                     <StatCard
                         title={t('stats.pnlToday')}
-                        amount={`$0,00`}
-                        sub={`0 ${t('stats.tradesToday')}`}
+                        amount={formatCurrency(stats.todayPnl)}
+                        sub={`${stats.totalTrades} ${t('stats.tradesToday')}`}
                         icon={Calendar}
-                        positive={true}
+                        positive={stats.todayPnl >= 0}
                     />
                     <StatCard
                         title={t('stats.pnlWeek')}
-                        amount={`$0,00`}
-                        sub={`${t('stats.for7Days')} 0 ${t('stats.tradesText')}`}
+                        amount={formatCurrency(stats.weekPnl)}
+                        sub={`${t('stats.for7Days')} ${stats.totalTrades} ${t('stats.tradesText')}`}
                         icon={BarChart2}
-                        positive={true}
+                        positive={stats.weekPnl >= 0}
                     />
                     <StatCard
                         title={t('stats.pnlMonth')}
-                        amount={`$0,00`}
-                        sub={`${t('stats.for30Days')} 0 ${t('stats.tradesText')}`}
+                        amount={formatCurrency(stats.monthPnl)}
+                        sub={`${t('stats.for30Days')} ${stats.totalTrades} ${t('stats.tradesText')}`}
                         icon={TrendingUp}
-                        positive={true}
+                        positive={stats.monthPnl >= 0}
                     />
                 </div>
             </section>
@@ -50,12 +53,19 @@ export default function StatsPage() {
                         <div className="flex items-center justify-between mb-2">
                             <div className="text-[13px] font-medium text-[#8B949E]">{t('stats.winrate')}</div>
                             <div className="h-1.5 bg-[#161B22] rounded-full flex-1 ml-4 overflow-hidden border border-[#30363D]/30">
-                                <div className="h-full bg-[#00D26A]" style={{ width: `0%` }}></div>
+                                <div
+                                    className="h-full bg-[#00D26A] transition-all duration-500"
+                                    style={{ width: `${Math.min(100, stats.winRate)}%` }}
+                                />
                             </div>
                         </div>
                         <div className="flex items-baseline gap-3">
-                            <div className="text-3xl font-mono font-bold text-white transition-all tracking-tight">0.0%</div>
-                            <div className="text-[11px] text-[#8B949E] opacity-70">0 {t('stats.profitableOf')} 0 {t('stats.totalFixed')}</div>
+                            <div className="text-3xl font-mono font-bold text-white transition-all tracking-tight">
+                                {stats.winRate.toFixed(1)}%
+                            </div>
+                            <div className="text-[11px] text-[#8B949E] opacity-70">
+                                {stats.profitTrades} {t('stats.profitableOf')} {stats.totalTrades} {t('stats.totalFixed')}
+                            </div>
                         </div>
                     </div>
                 </div>

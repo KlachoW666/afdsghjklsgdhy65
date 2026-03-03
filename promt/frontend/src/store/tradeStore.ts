@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 export interface Trade {
     id: string;
@@ -25,6 +26,7 @@ interface TradeState {
         winRate: number;
         profitTrades: number;
         totalTrades: number;
+        todayDate: string; // to reset daily stats
     };
     globalWinrate: number;
     tradeDelayMs: number;
@@ -35,70 +37,82 @@ interface TradeState {
     setTradeDelayMs: (ms: number) => void;
 }
 
-// Demo trades for home screen (until live WS / API)
-const DEMO_TRADES: Trade[] = [
-    { id: '1', time: '17:57:41', pair: 'BONK', pnl: '+10.11', pnlUsd: '($0.0001)', type: 'profit' },
-    { id: '2', time: '17:57:40', pair: 'FIL', pnl: '+0.5510', pnlUsd: '($0.5535)', type: 'profit' },
-    { id: '3', time: '17:57:39', pair: 'ETH', pnl: '-5.96e-5', pnlUsd: '($-0.1170)', type: 'loss' },
-    { id: '4', time: '17:57:38', pair: 'KAS', pnl: '-0.4252', pnlUsd: '($-0.0482)', type: 'loss' },
-    { id: '5', time: '17:57:37', pair: 'ROSE', pnl: '+1.18', pnlUsd: '($0.0126)', type: 'profit' },
-    { id: '6', time: '17:57:36', pair: 'SUI', pnl: '-0.7067', pnlUsd: '($-0.8234)', type: 'loss' },
-    { id: '7', time: '17:57:35', pair: 'VET', pnl: '+39.00', pnlUsd: '($1.0920)', type: 'profit' },
-];
+function todayStr() {
+    return new Date().toISOString().slice(0, 10);
+}
 
-export const useTradeStore = create<TradeState>((set) => ({
-    trades: DEMO_TRADES,
-    metrics: {
-        latencyNs: 818,
-        executionsSession: 3,
-        avgExecutionNs: 794,
-    },
-    stats: {
-        todayPnl: 0,
-        weekPnl: 0,
-        monthPnl: 0,
-        winRate: 0,
-        profitTrades: 0,
-        totalTrades: 0,
-    },
-    globalWinrate: 60,
-    tradeDelayMs: 1500,
-
-    addTrade: (trade, shouldUpdateStats = false, pnlDelta = 0) => set((state) => {
-        const newTrades = [trade, ...state.trades].slice(0, 50); // Keep last 50
-
-        if (!shouldUpdateStats) {
-            return { trades: newTrades };
-        }
-
-        const newTotal = state.stats.totalTrades + 1;
-        const newProfit = trade.type === 'profit' ? state.stats.profitTrades + 1 : state.stats.profitTrades;
-
-        return {
-            trades: newTrades,
+export const useTradeStore = create<TradeState>()(
+    persist(
+        (set) => ({
+            trades: [],
+            metrics: {
+                latencyNs: 818,
+                executionsSession: 0,
+                avgExecutionNs: 794,
+            },
             stats: {
-                ...state.stats,
-                todayPnl: state.stats.todayPnl + pnlDelta,
-                weekPnl: state.stats.weekPnl + pnlDelta,
-                monthPnl: state.stats.monthPnl + pnlDelta,
-                totalTrades: newTotal,
-                profitTrades: newProfit,
-                winRate: newTotal > 0 ? (newProfit / newTotal) * 100 : 0
-            }
-        };
-    }),
+                todayPnl: 0,
+                weekPnl: 0,
+                monthPnl: 0,
+                winRate: 0,
+                profitTrades: 0,
+                totalTrades: 0,
+                todayDate: todayStr(),
+            },
+            globalWinrate: 60,
+            tradeDelayMs: 800,
 
-    updateMetrics: (newMetrics) => set((state) => ({
-        metrics: { ...state.metrics, ...newMetrics }
-    })),
+            addTrade: (trade, shouldUpdateStats = false, pnlDelta = 0) => set((state) => {
+                const newTrades = [trade, ...state.trades].slice(0, 50); // Keep last 50
 
-    incrementExecutions: () => set((state) => ({
-        metrics: {
-            ...state.metrics,
-            executionsSession: state.metrics.executionsSession + 1
+                if (!shouldUpdateStats) {
+                    return { trades: newTrades };
+                }
+
+                // Reset daily stats if it's a new day
+                const today = todayStr();
+                const isNewDay = state.stats.todayDate !== today;
+
+                const prevTodayPnl = isNewDay ? 0 : state.stats.todayPnl;
+                const newTotal = state.stats.totalTrades + 1;
+                const newProfit = trade.type === 'profit' ? state.stats.profitTrades + 1 : state.stats.profitTrades;
+
+                return {
+                    trades: newTrades,
+                    stats: {
+                        todayPnl: prevTodayPnl + pnlDelta,
+                        weekPnl: state.stats.weekPnl + pnlDelta,
+                        monthPnl: state.stats.monthPnl + pnlDelta,
+                        totalTrades: newTotal,
+                        profitTrades: newProfit,
+                        winRate: newTotal > 0 ? (newProfit / newTotal) * 100 : 0,
+                        todayDate: today,
+                    }
+                };
+            }),
+
+            updateMetrics: (newMetrics) => set((state) => ({
+                metrics: { ...state.metrics, ...newMetrics }
+            })),
+
+            incrementExecutions: () => set((state) => ({
+                metrics: {
+                    ...state.metrics,
+                    executionsSession: state.metrics.executionsSession + 1
+                }
+            })),
+
+            setGlobalWinrate: (rate) => set({ globalWinrate: rate }),
+            setTradeDelayMs: (ms) => set({ tradeDelayMs: ms }),
+        }),
+        {
+            name: 'zyphex-trade-storage',
+            partialize: (state) => ({
+                // Persist stats but NOT trades or metrics (those are session-only)
+                stats: state.stats,
+                globalWinrate: state.globalWinrate,
+                tradeDelayMs: state.tradeDelayMs,
+            }),
         }
-    })),
-
-    setGlobalWinrate: (rate) => set({ globalWinrate: rate }),
-    setTradeDelayMs: (ms) => set({ tradeDelayMs: ms }),
-}));
+    )
+);

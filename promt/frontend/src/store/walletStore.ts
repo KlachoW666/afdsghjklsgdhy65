@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 export type Network = 'TON' | 'BSC' | 'TRC' | 'SOL' | 'BTC' | 'ETH';
 
@@ -26,38 +27,45 @@ const initialBalances: Record<Network, number> = {
     ETH: 0,
 };
 
-export const useWalletStore = create<WalletState>((set) => ({
-    totalUsd: 0,
-    expectedDailyIncomeUsd: 0,
-    expectedDailyPercent: 5,
-    balances: { ...initialBalances },
-    withdrawLimits: {
-        minAmount: 50,
-        maxDailyAmount: 1000,
-        remainingToday: 1000,
-    },
+export const useWalletStore = create<WalletState>()(
+    persist(
+        (set) => ({
+            totalUsd: 0,
+            expectedDailyIncomeUsd: 0,
+            expectedDailyPercent: 5,
+            balances: { ...initialBalances },
+            withdrawLimits: {
+                minAmount: 50,
+                maxDailyAmount: 1000,
+                remainingToday: 1000,
+            },
 
-    setBalances: (total, networkBalances) => set({
-        totalUsd: total,
-        balances: networkBalances,
-        expectedDailyIncomeUsd: total > 0 ? total * 0.05 : 0
-    }),
+            setBalances: (total, networkBalances) => set({
+                totalUsd: total,
+                balances: networkBalances,
+                expectedDailyIncomeUsd: total > 0 ? total * 0.05 : 0
+            }),
 
-    resetBalances: () => set({
-        totalUsd: 0,
-        balances: { ...initialBalances },
-        expectedDailyIncomeUsd: 0,
-        withdrawLimits: {
-            minAmount: 50,
-            maxDailyAmount: 1000,
-            remainingToday: 1000,
+            resetBalances: () => set({
+                totalUsd: 0,
+                balances: { ...initialBalances },
+                expectedDailyIncomeUsd: 0,
+                withdrawLimits: {
+                    minAmount: 50,
+                    maxDailyAmount: 1000,
+                    remainingToday: 1000,
+                }
+            }),
+
+            decrementRemainingLimit: (amount) => set((state) => ({
+                withdrawLimits: {
+                    ...state.withdrawLimits,
+                    remainingToday: Math.max(0, state.withdrawLimits.remainingToday - amount)
+                }
+            }))
+        }),
+        {
+            name: 'zyphex-wallet-storage',
         }
-    }),
-
-    decrementRemainingLimit: (amount) => set((state) => ({
-        withdrawLimits: {
-            ...state.withdrawLimits,
-            remainingToday: Math.max(0, state.withdrawLimits.remainingToday - amount)
-        }
-    }))
-}));
+    )
+);
