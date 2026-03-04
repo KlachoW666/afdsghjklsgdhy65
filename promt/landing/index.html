@@ -2,9 +2,9 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Zyphex — Авто-фарминг USDT в Telegram</title>
-  <meta name="description" content="Торговый бот 24/7. Пополняй USDT — бот торгует за тебя. Рефералы, вывод на свой кошелёк. BSC и TRC." />
+  <meta name="description" content="Торговый бот 24/7. Пополняй USDT — бот торгует за тебя. Листинг ZYPHEX. BSC и TRC." />
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
   <link rel="stylesheet" href="style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -16,77 +16,71 @@
   <div class="glow glow-1" aria-hidden="true"></div>
   <div class="glow glow-2" aria-hidden="true"></div>
 
-  <main class="landing">
+  <main class="landing" id="main">
     <header class="header">
-      <img src="logo.svg" alt="Zyphex" class="logo-img" width="64" height="64" />
+      <img src="logo.svg" alt="Zyphex" class="logo-img" width="48" height="48" />
       <div class="brand">
         <h1 class="brand-name">Zyphex <span>Trading</span></h1>
-        <p class="brand-tagline">Авто-фарминг USDT в Telegram</p>
+        <p class="brand-tagline">Авто-фарминг USDT · 24/7 · BSC & TRC</p>
       </div>
     </header>
 
     <section class="hero">
-      <p class="hero-badge">24/7 • BSC & TRC • Без KYC</p>
-      <h2 class="hero-title">Пассивный доход пока ты спишь</h2>
-      <p class="hero-desc">Пополняешь баланс USDT — бот торгует за тебя. Включай и выключай торговлю в один тап. Выводи на свой кошелёк когда угодно.</p>
+      <h2 class="hero-title">Пассивный доход в один тап</h2>
+      <p class="hero-desc">Пополняй USDT — бот торгует. Выводи когда угодно. Обменивай на ZYPHEX до листинга.</p>
     </section>
 
-    <section class="stats">
-      <div class="stat">
-        <span class="stat-value">24/7</span>
-        <span class="stat-label">Авто-торговля</span>
-      </div>
-      <div class="stat">
-        <span class="stat-value">USDT</span>
-        <span class="stat-label">BSC · TRC</span>
-      </div>
-      <div class="stat">
-        <span class="stat-value">Рефералы</span>
-        <span class="stat-label">Доход с друзей</span>
-      </div>
-    </section>
+    <div class="row row-cards">
+      <section class="stats">
+        <div class="stat"><span class="stat-value">24/7</span><span class="stat-label">Торговля</span></div>
+        <div class="stat"><span class="stat-value">USDT</span><span class="stat-label">BSC·TRC</span></div>
+        <div class="stat"><span class="stat-value">Рефералы</span><span class="stat-label">Доход</span></div>
+      </section>
+      <section class="listing" data-listing-date="2026-04-05T00:00:00.000Z">
+        <p class="listing-label">До листинга ZYPHEX</p>
+        <div class="listing-countdown" id="countdown">
+          <span><var id="cd-d">0</var><em>д</em></span>
+          <span><var id="cd-h">0</var><em>ч</em></span>
+          <span><var id="cd-m">0</var><em>м</em></span>
+          <span><var id="cd-s">0</var><em>с</em></span>
+        </div>
+        <p class="listing-note">Меняй USDT на ZYPHEX в приложении</p>
+      </section>
+    </div>
 
-    <section class="features">
-      <h3 class="section-title">Как это работает</h3>
-      <div class="feature-card">
-        <span class="feature-num">01</span>
-        <h4>Пополнение</h4>
-        <p>Отправь USDT на свой депозитный адрес в сетях BSC или TRC. Средства зачисляются автоматически.</p>
-      </div>
-      <div class="feature-card">
-        <span class="feature-num">02</span>
-        <h4>Торговля</h4>
-        <p>Включи торговлю в приложении — бот круглосуточно совершает сделки и стремится к росту баланса.</p>
-      </div>
-      <div class="feature-card">
-        <span class="feature-num">03</span>
-        <h4>Вывод</h4>
-        <p>В любой момент выведи USDT на свой внешний кошелёк. Без скрытых комиссий и блокировок.</p>
-      </div>
-    </section>
-
-    <section class="benefits">
-      <h3 class="section-title">Почему Zyphex</h3>
-      <ul class="benefit-list">
-        <li><span class="benefit-dot"></span> Минимальный порог — начинай с любой суммы</li>
-        <li><span class="benefit-dot"></span> Реферальная программа — зарабатывай с пополнений друзей</li>
-        <li><span class="benefit-dot"></span> Обмен USDT на ZYPHEX — токен проекта с листингом впереди</li>
-        <li><span class="benefit-dot"></span> Всё в Telegram — не нужно ставить отдельное приложение</li>
-      </ul>
-    </section>
+    <ul class="bullets">
+      <li>Пополнение → авто-торговля → вывод на свой кошелёк</li>
+      <li>Обмен USDT на ZYPHEX — токены после листинга на твой счёт</li>
+      <li>Всё в Telegram, без отдельного приложения</li>
+    </ul>
 
     <section class="cta-block">
       <a href="https://t.me/ZyphexAutotraidingBot/app" class="cta" target="_blank" rel="noopener noreferrer">
-        <span class="cta-text">Открыть в Telegram</span>
-        <span class="cta-sub">Mini App · Бесплатно</span>
+        Открыть в Telegram
       </a>
-      <p class="cta-hint">Работает в любом устройстве с Telegram</p>
     </section>
 
-    <footer class="footer">
-      <p>Zyphex Trading · Авто-фарминг USDT</p>
-      <p class="footer-note">Используй бота на свой риск. Криптовалюты — волатильный актив.</p>
-    </footer>
+    <footer class="footer">Zyphex Trading · Криптовалюты — волатильный актив</footer>
   </main>
+
+  <script>
+    (function() {
+      var el = document.querySelector('.listing[data-listing-date]');
+      if (!el) return;
+      var dateStr = el.getAttribute('data-listing-date');
+      var end = new Date(dateStr).getTime();
+      var d = document.getElementById('cd-d'), h = document.getElementById('cd-h'), m = document.getElementById('cd-m'), s = document.getElementById('cd-s');
+      function tick() {
+        var now = Date.now(), diff = Math.max(0, end - now);
+        if (diff === 0) { d.textContent = '0'; h.textContent = '0'; m.textContent = '0'; s.textContent = '0'; return; }
+        d.textContent = Math.floor(diff / 86400000);
+        h.textContent = Math.floor((diff % 86400000) / 3600000);
+        m.textContent = Math.floor((diff % 3600000) / 60000);
+        s.textContent = Math.floor((diff % 60000) / 1000);
+      }
+      tick();
+      setInterval(tick, 1000);
+    })();
+  </script>
 </body>
 </html>
