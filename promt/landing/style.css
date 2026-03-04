@@ -22,6 +22,7 @@
 
 html {
   height: 100%;
+  width: 100%;
 }
 
 body {
@@ -30,6 +31,8 @@ body {
   color: var(--text);
   min-height: 100vh;
   min-height: 100dvh;
+  height: 100%;
+  width: 100%;
   line-height: 1.4;
   overflow-x: hidden;
   overflow-y: auto;
@@ -85,14 +88,16 @@ body {
 .landing {
   position: relative;
   z-index: 1;
-  max-width: 440px;
-  margin: 0 auto;
-  padding: clamp(0.75rem, 3vw, 1.25rem) 1rem clamp(0.75rem, 2vw, 1rem);
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: clamp(0.75rem, 4vw, 1.5rem) clamp(1rem, 6vw, 2.5rem) clamp(0.75rem, 2vw, 1rem);
   min-height: 100vh;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
   gap: clamp(0.5rem, 2vmin, 0.85rem);
+  justify-content: center;
 }
 
 /* Header */
