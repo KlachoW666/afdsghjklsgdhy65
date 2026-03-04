@@ -175,7 +175,7 @@ function App() {
   }, [validateSession, isAuthenticated]);
 
   return (
-    <Router>
+    <Router basename="/miniapp">
       <Routes>
         <Route path="/auth" element={
           !isAuthenticated ? <AuthPage onLogin={() => { }} /> : <Navigate to="/" />

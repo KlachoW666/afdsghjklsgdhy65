@@ -103,7 +103,7 @@ server {
     ssl_protocols       TLSv1.2 TLSv1.3;
     ssl_ciphers         HIGH:!aNULL:!MD5;
 
-    root /var/www/miniapp/promt/frontend/dist;
+    root /var/www/miniapp/promt/landing;
     index index.html;
 
     location /api/ {
@@ -116,6 +116,11 @@ server {
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location /miniapp/ {
+        alias /var/www/miniapp/promt/frontend/dist/;
+        try_files \$uri /miniapp/index.html;
     }
 
     location / {
@@ -141,10 +146,11 @@ echo "          Setup Complete!             "
 echo "======================================"
 echo ""
 echo "Mini App URL (BotFather -> Mini App):"
-echo "  https://$DOMAIN"
+echo "  https://$DOMAIN/miniapp"
 echo ""
 echo "Domain:    $DOMAIN, www.$DOMAIN (VPS $SERVER_IP)"
-echo "Frontend:  Nginx from $APP_DIR/promt/frontend/dist (HTTP -> HTTPS)"
+echo "Landing:   https://$DOMAIN/ (from $APP_DIR/promt/landing)"
+echo "Frontend:  https://$DOMAIN/miniapp (from $APP_DIR/promt/frontend/dist)"
 echo "Backend:   pm2 port $BACKEND_PORT, Nginx proxies /api/"
 echo "Database:  $APP_DIR/promt/backend/data/zyphex.db (preserved on update)"
 echo ""

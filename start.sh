@@ -6,8 +6,10 @@ set -e
 
 APP_DIR="/var/www/miniapp"
 REPO_URL="https://github.com/KlachoW666/afdsghjklsgdhy65.git"
-# Port for Mini App API (3001 to avoid conflict with other app on 3000)
 BACKEND_PORT="${BACKEND_PORT:-3001}"
+DOMAIN="${DOMAIN:-zyphex.ru}"
+SERVER_IP="${SERVER_IP:-188.127.230.83}"
+SSL_DIR="/etc/nginx/ssl/miniapp"
 
 echo "======================================"
 echo "    Mini App — start/update           "
@@ -61,11 +63,53 @@ else
     echo "  WARNING: API health check failed. Run: pm2 logs zyphex-api"
 fi
 
-# 4. Nginx (ensure proxy points to our backend port)
+# 4. Nginx (landing at /, Mini App at /miniapp, API at /api)
 echo "[4/4] Nginx..."
 NGINX_CONF="/etc/nginx/sites-available/miniapp"
-if [ -f "$NGINX_CONF" ]; then
-    sed -i "s|proxy_pass http://127.0.0.1:[0-9]*;|proxy_pass http://127.0.0.1:${BACKEND_PORT};|" "$NGINX_CONF"
+if [ -f "$SSL_DIR/cert.pem" ] && [ -f "$SSL_DIR/key.pem" ]; then
+  cat > "$NGINX_CONF" << NGINXEOF
+server {
+    listen 80;
+    listen [::]:80;
+    server_name $DOMAIN www.$DOMAIN $SERVER_IP;
+    return 301 https://\$host\$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name $DOMAIN www.$DOMAIN $SERVER_IP;
+
+    ssl_certificate     $SSL_DIR/cert.pem;
+    ssl_certificate_key $SSL_DIR/key.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+
+    root $APP_DIR/promt/landing;
+    index index.html;
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:${BACKEND_PORT};
+        proxy_http_version 1.1;
+        proxy_connect_timeout 10s;
+        proxy_read_timeout 30s;
+        proxy_send_timeout 30s;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location /miniapp/ {
+        alias $APP_DIR/promt/frontend/dist/;
+        try_files \$uri /miniapp/index.html;
+    }
+
+    location / {
+        try_files \$uri \$uri/ /index.html;
+    }
+}
+NGINXEOF
 fi
 if command -v nginx >/dev/null 2>&1; then
     nginx -t 2>/dev/null && systemctl reload nginx 2>/dev/null || systemctl start nginx 2>/dev/null || true
@@ -78,6 +122,8 @@ echo ""
 echo "======================================"
 echo "    Done. App should be running.      "
 echo "======================================"
+echo "  Landing:  https://$DOMAIN/"
+echo "  Mini App: https://$DOMAIN/miniapp (set in BotFather)"
 echo "  Backend:  pm2 list && pm2 logs zyphex-api (port $BACKEND_PORT)"
 echo "  API test: curl -s http://127.0.0.1:$BACKEND_PORT/api/zyphex/rate"
 echo "======================================"

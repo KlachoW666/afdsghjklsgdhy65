@@ -58,3 +58,6 @@ npm run check-api
 ## Продакшен
 
 На сервере используется корневой `install.sh` (первый запуск) и `start.sh` (обновление и перезапуск). Домен и VPS задаются в `install.sh` (zyphex.ru, 188.127.230.83).
+
+- **Лендинг:** https://zyphex.ru/ (статичная страница из `promt/landing/`).
+- **Mini App:** https://zyphex.ru/miniapp — в BotFather (Mini App) укажите этот URL.
