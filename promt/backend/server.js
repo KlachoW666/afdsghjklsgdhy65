@@ -330,7 +330,7 @@ app.get('/api/referral/info', (req, res) => {
       refCode: u.ref_code,
       invitedCount: u.referral_count ?? 0,
       totalEarned: u.referral_earnings ?? 0,
-      refLink: `https://t.me/${process.env.BOT_USERNAME || 'ZyphexAutotraidingBot'}/app?startapp=${u.ref_code}`,
+      refLink: `https://t.me/${process.env.BOT_USERNAME || 'ZYPHEXAUTOTRAIDINGBOT'}/app?startapp=${u.ref_code}`,
     });
   } catch (e) {
     console.error(e);

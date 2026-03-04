@@ -42,7 +42,7 @@ npm run dev
 - `ADMIN_IDS` — список Telegram User ID админов через запятую
 - `ADMIN_WALLET_TON`, `ADMIN_WALLET_BSC`, … — адреса кошельков для мониторинга депозитов
 - `TELEGRAM_BOT_TOKEN` — токен бота для рассылки из админки
-- `BOT_USERNAME` — имя бота для реф-ссылки (по умолчанию ZyphexAutotraidingBot)
+- `BOT_USERNAME` — имя бота для реф-ссылки (по умолчанию ZYPHEXAUTOTRAIDINGBOT)
 - `SUPPORT_USERNAME` — username поддержки в Telegram без «@»; ссылка кнопки «Поддержка» в шапке: `t.me/SUPPORT_USERNAME`. Если не задан, кнопка не показывается.
 
 Для сборки фронта с кастомным контактом поддержки: `VITE_SUPPORT_USERNAME=...` (при билде).

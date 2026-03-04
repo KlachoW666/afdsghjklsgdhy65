@@ -66,13 +66,30 @@ fi
 # 4. Nginx (landing at /, Mini App at /miniapp, API at /api)
 echo "[4/4] Nginx..."
 NGINX_CONF="/etc/nginx/sites-available/miniapp"
-if [ -f "$SSL_DIR/cert.pem" ] && [ -f "$SSL_DIR/key.pem" ]; then
+CERT_PEM="$SSL_DIR/cert.pem"
+KEY_PEM="$SSL_DIR/key.pem"
+if [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/$DOMAIN/privkey.pem" ]; then
+  CERT_PEM="/etc/letsencrypt/live/$DOMAIN/fullchain.pem"
+  KEY_PEM="/etc/letsencrypt/live/$DOMAIN/privkey.pem"
+  echo "  Using Let's Encrypt certificate for $DOMAIN"
+fi
+if [ -f "$CERT_PEM" ] && [ -f "$KEY_PEM" ]; then
+  mkdir -p /var/www/miniapp/.well-known/acme-challenge
+  chmod -R 755 /var/www/miniapp/.well-known 2>/dev/null || true
   cat > "$NGINX_CONF" << NGINXEOF
 server {
     listen 80;
     listen [::]:80;
     server_name $DOMAIN www.$DOMAIN $SERVER_IP;
-    return 301 https://\$host\$request_uri;
+
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/miniapp;
+        allow all;
+    }
+
+    location / {
+        return 301 https://\$host\$request_uri;
+    }
 }
 
 server {
@@ -80,10 +97,11 @@ server {
     listen [::]:443 ssl;
     server_name $DOMAIN www.$DOMAIN $SERVER_IP;
 
-    ssl_certificate     $SSL_DIR/cert.pem;
-    ssl_certificate_key $SSL_DIR/key.pem;
+    ssl_certificate     $CERT_PEM;
+    ssl_certificate_key $KEY_PEM;
     ssl_protocols       TLSv1.2 TLSv1.3;
-    ssl_ciphers         HIGH:!aNULL:!MD5;
+    ssl_ciphers         ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers off;
 
     root $APP_DIR/promt/landing;
     index index.html;
@@ -98,6 +116,10 @@ server {
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location = /miniapp {
+        return 301 \$scheme://\$host/miniapp/\$is_args\$args;
     }
 
     location /miniapp/ {

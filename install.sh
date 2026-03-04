@@ -84,13 +84,34 @@ if [ ! -f "$SSL_DIR/cert.pem" ]; then
     chmod 600 "$SSL_DIR/key.pem"
 fi
 
+# Prefer Let's Encrypt cert if present (so start.sh doesn't overwrite it with self-signed)
+CERT_PEM="$SSL_DIR/cert.pem"
+KEY_PEM="$SSL_DIR/key.pem"
+if [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/$DOMAIN/privkey.pem" ]; then
+  CERT_PEM="/etc/letsencrypt/live/$DOMAIN/fullchain.pem"
+  KEY_PEM="/etc/letsencrypt/live/$DOMAIN/privkey.pem"
+  echo "Using Let's Encrypt certificate for $DOMAIN"
+fi
+
+# Let's Encrypt ACME challenge (certbot needs this on port 80)
+mkdir -p /var/www/miniapp/.well-known/acme-challenge
+chmod -R 755 /var/www/miniapp/.well-known 2>/dev/null || true
+
 NGINX_CONF="/etc/nginx/sites-available/miniapp"
 cat > "$NGINX_CONF" << NGINXEOF
 server {
     listen 80;
     listen [::]:80;
     server_name $DOMAIN www.$DOMAIN $SERVER_IP;
-    return 301 https://\$host\$request_uri;
+
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/miniapp;
+        allow all;
+    }
+
+    location / {
+        return 301 https://\$host\$request_uri;
+    }
 }
 
 server {
@@ -98,10 +119,11 @@ server {
     listen [::]:443 ssl;
     server_name $DOMAIN www.$DOMAIN $SERVER_IP;
 
-    ssl_certificate     $SSL_DIR/cert.pem;
-    ssl_certificate_key $SSL_DIR/key.pem;
+    ssl_certificate     $CERT_PEM;
+    ssl_certificate_key $KEY_PEM;
     ssl_protocols       TLSv1.2 TLSv1.3;
-    ssl_ciphers         HIGH:!aNULL:!MD5;
+    ssl_ciphers         ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers off;
 
     root /var/www/miniapp/promt/landing;
     index index.html;
@@ -116,6 +138,10 @@ server {
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location = /miniapp {
+        return 301 \$scheme://\$host/miniapp/\$is_args\$args;
     }
 
     location /miniapp/ {
@@ -134,28 +160,105 @@ rm -f /etc/nginx/sites-enabled/default
 nginx -t && systemctl restart nginx
 systemctl enable nginx 2>/dev/null || true
 
-# Optional: Let's Encrypt for domain (run if A-record zyphex.ru -> $SERVER_IP)
+# Optional: Let's Encrypt (run if DNS A-record points $DOMAIN to this server)
 if command -v certbot >/dev/null 2>&1; then
     echo "Trying Let's Encrypt for $DOMAIN..."
-    certbot --nginx -d "$DOMAIN" -d "www.$DOMAIN" --non-interactive --agree-tos -m "${CERTBOT_EMAIL:-admin@zyphex.ru}" 2>/dev/null && systemctl reload nginx 2>/dev/null || echo "  (certbot skipped or failed — using self-signed; run manually later if needed)"
+    certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos -m "${CERTBOT_EMAIL:-admin@zyphex.ru}" 2>/dev/null || true
+    certbot --nginx -d "www.$DOMAIN" --non-interactive 2>/dev/null || true
 fi
 
-# 6. Final Instructions
+# Re-apply full Nginx config (certbot may have overwritten it): keep our locations, use LE cert if present
+CERT_PEM="$SSL_DIR/cert.pem"
+KEY_PEM="$SSL_DIR/key.pem"
+[ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/$DOMAIN/privkey.pem" ] && CERT_PEM="/etc/letsencrypt/live/$DOMAIN/fullchain.pem" && KEY_PEM="/etc/letsencrypt/live/$DOMAIN/privkey.pem"
+cat > "$NGINX_CONF" << NGINXEOF2
+server {
+    listen 80;
+    listen [::]:80;
+    server_name $DOMAIN www.$DOMAIN $SERVER_IP;
+
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/miniapp;
+        allow all;
+    }
+
+    location / {
+        return 301 https://\$host\$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name $DOMAIN www.$DOMAIN $SERVER_IP;
+
+    ssl_certificate     $CERT_PEM;
+    ssl_certificate_key $KEY_PEM;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers off;
+
+    root /var/www/miniapp/promt/landing;
+    index index.html;
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:${BACKEND_PORT};
+        proxy_http_version 1.1;
+        proxy_connect_timeout 10s;
+        proxy_read_timeout 30s;
+        proxy_send_timeout 30s;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location = /miniapp {
+        return 301 \$scheme://\$host/miniapp/\$is_args\$args;
+    }
+
+    location /miniapp/ {
+        alias /var/www/miniapp/promt/frontend/dist/;
+        try_files \$uri /miniapp/index.html;
+    }
+
+    location / {
+        try_files \$uri \$uri/ /index.html;
+    }
+}
+NGINXEOF2
+nginx -t 2>/dev/null && systemctl reload nginx 2>/dev/null || true
+
+# 6. Verification and summary
+echo ""
 echo "======================================"
-echo "          Setup Complete!             "
+echo "    Verification                     "
+echo "======================================"
+FAIL=0
+if nginx -t 2>/dev/null; then echo "  [OK] Nginx config"; else echo "  [FAIL] Nginx config"; FAIL=1; fi
+if systemctl is-active --quiet nginx 2>/dev/null; then echo "  [OK] Nginx running"; else echo "  [FAIL] Nginx not running"; FAIL=1; fi
+if pm2 describe zyphex-api >/dev/null 2>&1; then echo "  [OK] Backend (zyphex-api)"; else echo "  [FAIL] Backend not in pm2"; FAIL=1; fi
+if curl -sf --max-time 3 "http://127.0.0.1:$BACKEND_PORT/api/health" >/dev/null 2>&1; then echo "  [OK] API health"; else echo "  [FAIL] API health check"; FAIL=1; fi
+if [ -f "$APP_DIR/promt/frontend/dist/index.html" ]; then echo "  [OK] Frontend built"; else echo "  [FAIL] Frontend dist missing"; FAIL=1; fi
+if [ -f "$APP_DIR/promt/landing/index.html" ]; then echo "  [OK] Landing present"; else echo "  [FAIL] Landing missing"; FAIL=1; fi
+if [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]; then echo "  [OK] Let's Encrypt cert"; else echo "  [!!] No Let's Encrypt (Telegram may show 'not secure') — run: certbot --nginx -d $DOMAIN"; fi
+echo "======================================"
+echo "          Setup Complete             "
 echo "======================================"
 echo ""
-echo "Mini App URL (BotFather -> Mini App):"
-echo "  https://$DOMAIN/miniapp"
+echo "Mini App URL (BotFather -> Main App):  https://$DOMAIN/miniapp"
+echo "Landing:   https://$DOMAIN/"
+echo "Backend:   pm2 port $BACKEND_PORT, Nginx /api/"
 echo ""
-echo "Domain:    $DOMAIN, www.$DOMAIN (VPS $SERVER_IP)"
-echo "Landing:   https://$DOMAIN/ (from $APP_DIR/promt/landing)"
-echo "Frontend:  https://$DOMAIN/miniapp (from $APP_DIR/promt/frontend/dist)"
-echo "Backend:   pm2 port $BACKEND_PORT, Nginx proxies /api/"
-echo "Database:  $APP_DIR/promt/backend/data/zyphex.db (preserved on update)"
-echo ""
-echo "If connection refused: open ports 80,443 in hosting firewall; pm2 list; systemctl status nginx"
-echo "Check:     pm2 list && pm2 logs zyphex-api --lines 5"
-echo ""
-echo "To get Let's Encrypt cert later: certbot --nginx -d $DOMAIN -d www.$DOMAIN"
+if [ "$FAIL" -eq 1 ]; then
+  echo "Some checks failed. Run: pm2 list; pm2 logs zyphex-api; systemctl status nginx"
+  echo ""
+fi
+if [ ! -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]; then
+  echo "To fix 'unsupported protocol' / 'not secure' in Telegram:"
+  echo "  1) Point DNS A-record $DOMAIN to this server IP"
+  echo "  2) Run: certbot --nginx -d $DOMAIN"
+  echo "  3) Run: ./start.sh  (or re-run this script)"
+  echo ""
+fi
 echo "======================================"
