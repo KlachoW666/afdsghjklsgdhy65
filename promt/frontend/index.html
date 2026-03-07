@@ -14,10 +14,9 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" />
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
-      // Automatically expand Telegram WebApp when initialized
+      // Expand and theme — ready() вызываем из React после монтирования, чтобы спиннер Telegram исчез только когда приложение отрисовалось
       if (window.Telegram && window.Telegram.WebApp) {
         var tg = window.Telegram.WebApp;
-        tg.ready();
         tg.expand();
         if (tg.enableClosingConfirmation) tg.enableClosingConfirmation(false);
         if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.7') && tg.setViewportStableHeight) tg.setViewportStableHeight(true);
@@ -29,7 +28,9 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div style="display:flex;align-items:center;justify-content:center;min-height:100dvh;background:linear-gradient(180deg,#0B0F19 0%,#060A13 100%);color:#94A3B8;font-family:system-ui,sans-serif;">Загрузка…</div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

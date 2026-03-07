@@ -12,6 +12,7 @@ export default function AuthPage({ onLogin }: { onLogin: () => void }) {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [checking, setChecking] = useState(true);
+    const [checkFailed, setCheckFailed] = useState(false);
     const [isRegistration, setIsRegistration] = useState(false);
     const [activeField, setActiveField] = useState<'pin' | 'confirm'>('pin');
     const [shakeError, setShakeError] = useState(false);
@@ -21,6 +22,8 @@ export default function AuthPage({ onLogin }: { onLogin: () => void }) {
     const { t } = useTranslation();
 
     useEffect(() => {
+        let cancelled = false;
+        const timeoutMs = 6000;
         const waitForTelegram = () =>
             new Promise<void>((resolve) => {
                 if (window.Telegram?.WebApp?.initDataUnsafe?.user) return resolve();
@@ -35,11 +38,20 @@ export default function AuthPage({ onLogin }: { onLogin: () => void }) {
                     }
                 }, step);
             });
+        const timeout = setTimeout(() => {
+            if (cancelled) return;
+            setChecking(false);
+            setIsRegistration(true);
+        }, timeoutMs);
         waitForTelegram()
-            .then(() => MockAPI.checkRegistered())
-            .then((exists) => setIsRegistration(!exists))
-            .catch(() => setIsRegistration(false))
-            .finally(() => setChecking(false));
+            .then(() => (cancelled ? undefined : MockAPI.checkRegistered()))
+            .then((exists) => { if (!cancelled) { setIsRegistration(!exists); setCheckFailed(false); } })
+            .catch(() => { if (!cancelled) { setIsRegistration(true); setCheckFailed(true); } })
+            .finally(() => {
+                if (!cancelled) setChecking(false);
+                clearTimeout(timeout);
+            });
+        return () => { cancelled = true; clearTimeout(timeout); };
     }, []);
 
     const triggerError = (msg: string) => {
@@ -98,13 +110,32 @@ export default function AuthPage({ onLogin }: { onLogin: () => void }) {
     const currentPin = activeField === 'pin' ? pin : confirmPin;
     const maxDots = 6;
 
+    const retryCheck = () => {
+        setChecking(true);
+        setCheckFailed(false);
+        MockAPI.checkRegistered()
+            .then((exists) => { setIsRegistration(!exists); setChecking(false); })
+            .catch(() => { setIsRegistration(true); setCheckFailed(true); setChecking(false); });
+    };
+
     if (checking) {
         return (
             <div className="min-h-[100dvh] overflow-y-auto overscroll-contain text-white px-6 font-sans aurora-bg" style={{ background: 'linear-gradient(180deg, #0B0F19 0%, #060A13 100%)' }}>
                 <div className="flex flex-col items-center justify-center min-h-[100dvh] relative z-10">
-                    <Loader2 className="w-10 h-10 text-[#00E676] animate-spin" />
-                    <p className="mt-4 text-[#64748B] text-sm">Загрузка...</p>
+                    <Loader2 className="w-10 h-10 text-[#00E676] animate-spin" aria-hidden />
+                    <p className="mt-4 text-[#94A3B8] text-sm">Проверка входа…</p>
+                    <p className="mt-2 text-[#64748B] text-xs">Через несколько секунд откроется форма</p>
                 </div>
+            </div>
+        );
+    }
+
+    if (checkFailed) {
+        return (
+            <div className="min-h-[100dvh] overflow-y-auto overscroll-contain text-white px-6 font-sans aurora-bg flex flex-col items-center justify-center" style={{ background: 'linear-gradient(180deg, #0B0F19 0%, #060A13 100%)' }}>
+                <p className="text-[#94A3B8] text-sm text-center mb-4">Не удалось проверить авторизацию. Проверьте интернет.</p>
+                <button type="button" onClick={retryCheck} className="px-5 py-2.5 rounded-xl bg-[#00E676] text-black font-semibold">Повторить</button>
+                <button type="button" onClick={() => setCheckFailed(false)} className="mt-3 text-[#64748B] text-sm">Ввести PIN</button>
             </div>
         );
     }

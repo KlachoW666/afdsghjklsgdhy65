@@ -3,12 +3,25 @@ import { CONFIG } from '../config';
 // Явный origin в Telegram Web App избегает проблем с базой запросов на мобильных
 const base = CONFIG.API_BASE || (typeof window !== 'undefined' && window.location?.origin ? window.location.origin : '');
 
+const REQUEST_TIMEOUT_MS = 15000;
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const url = path.startsWith('http') ? path : `${base}${path}`;
-  const res = await fetch(url, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...options.headers },
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+      headers: { 'Content-Type': 'application/json', ...options.headers },
+    });
+  } catch (e) {
+    clearTimeout(timeoutId);
+    if (e instanceof Error && e.name === 'AbortError') throw new Error('Таймаут. Проверьте интернет.');
+    throw e;
+  }
+  clearTimeout(timeoutId);
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const d = data as { error?: string; message?: string; detail?: string };

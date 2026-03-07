@@ -62,10 +62,19 @@ if pm2 describe wevox-api >/dev/null 2>&1; then
     echo "Restarting backend (wevox-api)..."
     pm2 delete wevox-api 2>/dev/null || true
 fi
-echo "Starting backend (wevox-api) on port $BACKEND_PORT..."
-PORT=$BACKEND_PORT pm2 start server.js --name wevox-api --cwd "$APP_DIR/promt/backend"
+echo "Starting backend (wevox-api) on port $BACKEND_PORT (always on: restart on crash and on boot)..."
+PORT=$BACKEND_PORT pm2 start server.js --name wevox-api --cwd "$APP_DIR/promt/backend" \
+    --max-restarts 999999 \
+    --restart-delay 3000 \
+    --exp-backoff-restart-delay 100
 pm2 save 2>/dev/null || true
-pm2 startup 2>/dev/null || true
+# Включить автозапуск PM2 при загрузке сервера (чтобы приложение всегда было включено)
+if command -v pm2 >/dev/null 2>&1; then
+    PM2_USER=root
+    PM2_HOME=/root
+    [ -n "$SUDO_USER" ] && PM2_USER="$SUDO_USER" && PM2_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+    (pm2 startup systemd -u "$PM2_USER" --hp "$PM2_HOME" 2>&1 | grep -oE 'sudo[^;]+' | head -1 | bash) 2>/dev/null || true
+fi
 
 # 5. Configure Nginx (HTTP + HTTPS) for domain WEVOX.RU
 echo "[5/6] Configuring Nginx..."

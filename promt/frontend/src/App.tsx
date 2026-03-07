@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef, lazy, Suspense } from 'react';
+import { useEffect, useCallback, useRef, useState, lazy, Suspense, Component, type ReactNode } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Layout/Header';
 import BottomNav from './components/Layout/BottomNav';
@@ -16,8 +16,8 @@ const ExchangePage = lazy(() => import('./pages/ExchangePage').then(m => ({ defa
 const ReferralPage = lazy(() => import('./pages/ReferralPage').then(m => ({ default: m.default })));
 const StatsPage = lazy(() => import('./pages/StatsPage').then(m => ({ default: m.default })));
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.default })));
-const AuthPage = lazy(() => import('./pages/AuthPage').then(m => ({ default: m.default })));
 const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: m.default })));
+import AuthPage from './pages/AuthPage';
 
 const isInsideTelegram = () => typeof window !== 'undefined' && !!window.Telegram?.WebApp;
 
@@ -140,11 +140,61 @@ function useTradeEngine() {
 // App layout
 // ═══════════════════════════════════════════
 
-const PageFallback = () => (
-  <div className="flex items-center justify-center min-h-[40dvh] text-text-muted">
-    <div className="animate-pulse">Загрузка…</div>
-  </div>
-);
+/** Fallback при загрузке lazy-роутов; через 12 сек предлагаем обновить страницу */
+function PageFallback() {
+  const [timedOut, setTimedOut] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setTimedOut(true), 12000);
+    return () => clearTimeout(t);
+  }, []);
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[50dvh] px-6 text-center">
+      <div className="animate-pulse text-[#94A3B8] mb-4">Загрузка…</div>
+      {timedOut && (
+        <div className="text-sm text-[#FBBF24] mb-3">
+          Долгая загрузка. Проверьте интернет.
+        </div>
+      )}
+      {timedOut && (
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 rounded-xl bg-[#00E676] text-black font-semibold"
+        >
+          Обновить страницу
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Ловит ошибки (в т.ч. сбой загрузки чанков) и показывает кнопку «Обновить» */
+class AppErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch() {
+    try { window.Telegram?.WebApp?.ready(); } catch { /* ignore */ }
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[100dvh] px-6 text-center bg-[#0B0F19] text-[#F8FAFC]">
+          <p className="text-[#94A3B8] mb-4">Не удалось загрузить приложение.</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="px-5 py-2.5 rounded-xl bg-[#00E676] text-black font-semibold"
+          >
+            Обновить страницу
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => (
   <div
@@ -173,6 +223,11 @@ const START_PARAM_REGEX = /^[\w-]{1,512}$/;
 
 function App() {
   const { isAuthenticated } = useUserStore();
+
+  // Скрыть спиннер Telegram только после того, как наше приложение смонтировалось и отрисовалось
+  useEffect(() => {
+    try { window.Telegram?.WebApp?.ready(); } catch { /* ignore */ }
+  }, []);
 
   // Fallback: read Telegram start_param (ref link) when app is ready — in case it wasn't available at bootstrap
   useEffect(() => {
@@ -210,9 +265,10 @@ function App() {
   }, [validateSession, isAuthenticated]);
 
   return (
-    <Router basename="/miniapp">
-      <Suspense fallback={<PageFallback />}>
-        <Routes>
+    <AppErrorBoundary>
+      <Router basename="/miniapp">
+        <Suspense fallback={<PageFallback />}>
+          <Routes>
           <Route path="/auth" element={
             !isAuthenticated ? <AuthPage onLogin={() => { }} /> : <Navigate to="/" />
           } />
@@ -226,9 +282,10 @@ function App() {
           <Route path="/admin" element={isAuthenticated ? <AppLayout><AdminPage /></AppLayout> : <Navigate to="/auth" />} />
 
           <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </Suspense>
-    </Router>
+          </Routes>
+        </Suspense>
+      </Router>
+    </AppErrorBoundary>
   );
 }
 
