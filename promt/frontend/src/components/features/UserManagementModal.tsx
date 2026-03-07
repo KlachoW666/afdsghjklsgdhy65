@@ -19,6 +19,7 @@ export default function UserManagementModal({ isOpen, onClose }: Props) {
     const [onlyRegistered, setOnlyRegistered] = useState(false);
     const [selectedUser, setSelectedUser] = useState<MockAppUser | null>(null);
     const [loading, setLoading] = useState(false);
+    const [listError, setListError] = useState(false);
     type PromptType = 'balance' | 'bonus' | 'notes' | null;
     const [promptState, setPromptState] = useState<{ type: PromptType; title: string; placeholder: string; current: string } | null>(null);
     const [promptInput, setPromptInput] = useState('');
@@ -26,9 +27,10 @@ export default function UserManagementModal({ isOpen, onClose }: Props) {
     useEffect(() => {
         if (isOpen && adminUserId) {
             setLoading(true);
+            setListError(false);
             fetchUsersApi(adminUserId)
-                .then(setUsers)
-                .catch(() => setUsers([]))
+                .then((list) => { setUsers(list); setListError(false); })
+                .catch(() => { setUsers([]); setListError(true); })
                 .finally(() => setLoading(false));
         }
     }, [isOpen, adminUserId, setUsers]);
@@ -158,8 +160,15 @@ export default function UserManagementModal({ isOpen, onClose }: Props) {
         }
     };
 
+    const refetchList = () => {
+        if (!adminUserId) return;
+        setLoading(true);
+        setListError(false);
+        fetchUsersApi(adminUserId).then((list) => { setUsers(list); setListError(false); }).catch(() => { setUsers([]); setListError(true); }).finally(() => setLoading(false));
+    };
+
     return (
-        <div className="fixed inset-0 z-50 bg-[#0D1117] flex flex-col animate-in slide-in-from-bottom-full duration-300">
+        <div className="fixed inset-0 z-[100] bg-[#0D1117] flex flex-col animate-in slide-in-from-bottom-full duration-300" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-[#30363D]/50 bg-[#161B22]/80 backdrop-blur-md shrink-0">
                 <div className="flex items-center gap-3 min-w-0">
@@ -218,7 +227,12 @@ export default function UserManagementModal({ isOpen, onClose }: Props) {
                         {/* User List */}
                         <div className="space-y-2">
                             {loading ? (
-                                <div className="text-center text-[#8B949E] py-10 text-sm">Загрузка...</div>
+                                <div className="text-center text-[#8B949E] py-10 text-sm">Загрузка списка…</div>
+                            ) : listError ? (
+                                <div className="text-center py-10 px-4">
+                                    <p className="text-[#94A3B8] text-sm mb-3">Не удалось загрузить список. Проверьте интернет.</p>
+                                    <button type="button" onClick={refetchList} className="px-5 py-2.5 rounded-xl bg-[#00E676] text-black font-semibold">Повторить</button>
+                                </div>
                             ) : (
                                 filteredUsers.map(user => (
                                     <div
