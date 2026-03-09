@@ -40,28 +40,27 @@ Telegram Web App для авто-трейдинга: пополнение USDT, 
 
 **Почему «Подключение не защищено» / ERR_SSL_VERSION_OR_CIPHER_MISMATCH — и как пофиксить**
 
-Telegram не открывает сайт, пока не удаётся согласовать защищённое соединение (протокол TLS и набор шифров). Другие приложения открываются мгновенно, потому что у них настроен доверенный сертификат и современный SSL. Сделайте два шага **на сервере**:
+Если в Telegram видите «wevox.ru использует неподдерживаемый протокол» или «Загрузка…» не проходит — соединение блокируется из‑за SSL. Сделайте **на сервере**:
 
-1. **Получить сертификат Let's Encrypt** (обязательно; самоподписанный сертификат Telegram не принимает):
+1. **Сертификат Let's Encrypt** (обязательно; самоподписанный Telegram не принимает):
    ```bash
    sudo certbot --nginx -d wevox.ru -d www.wevox.ru --agree-tos -m admin@wevox.ru
    ```
-   DNS для `wevox.ru` и `www.wevox.ru` должен указывать на IP вашего сервера. Если certbot уже делал сертификат — шаг можно пропустить.
+   DNS для домена должен указывать на IP сервера.
 
-2. **Подставить современные шифры в Nginx** (чтобы не было ERR_SSL_VERSION_OR_CIPHER_MISMATCH). Либо заново применить конфиг из репозитория (в нём уже прописаны нужные ciphers):
+2. **Сразу после certbot снова примените конфиг** (certbot может переписать Nginx и убрать нужные шифры — тогда снова будет ERR_SSL_VERSION_OR_CIPHER_MISMATCH):
    ```bash
    cd /var/www/miniapp && sudo ./install.sh
    ```
-   Либо вручную: откройте `/etc/nginx/sites-available/miniapp` и в каждом блоке `listen 443 ssl` убедитесь, что есть:
-   - `ssl_protocols TLSv1.2 TLSv1.3;`
-   - `ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;`
-   - `ssl_prefer_server_ciphers on;`
-   Затем проверка и перезагрузка:
-   ```bash
-   sudo nginx -t && sudo systemctl reload nginx
-   ```
+   Скрипт перезапишет Nginx с `ssl_protocols TLSv1.2 TLSv1.3` и современными `ssl_ciphers`, перезагрузит Nginx. Приложение и база не пострадают.
 
-После этого откройте приложение в Telegram снова — соединение должно устанавливаться, как у других приложений.
+3. **Проверка:** откройте в браузере `https://wevox.ru/miniapp/` — должна загрузиться приложение. Затем откройте то же в Telegram — соединение должно установиться, «Загрузка…» сменится на интерфейс приложения.
+
+Вручную (если не хотите запускать install.sh): в `/etc/nginx/sites-available/miniapp` в каждом блоке `listen 443 ssl` должны быть строки:
+- `ssl_protocols TLSv1.2 TLSv1.3;`
+- `ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;`
+- `ssl_prefer_server_ciphers on;`  
+Затем: `sudo nginx -t && sudo systemctl reload nginx`.
 
 **Бот и рассылки:** создайте файл `promt/backend/.env` и добавьте строку:
    ```

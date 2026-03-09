@@ -1,10 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Component, type ReactNode } from 'react';
 import { X, Search, Ban, DollarSign, UserCheck, ShieldAlert, CheckCircle2, Star, MessageSquare, RotateCcw, Gift } from 'lucide-react';
 import { useAdminStore } from '../../store/adminStore';
 import type { MockAppUser } from '../../store/adminStore';
 import { useUserStore } from '../../store/userStore';
 import { useTelegram } from '../../hooks/useTelegram';
 import { fetchUsers as fetchUsersApi, updateUser as updateUserApi, addBonus, resetBalance } from '../../api/adminApi';
+
+/** Ловит ошибки внутри модалки, чтобы не показывать «Не удалось загрузить админ-панель» */
+class UserModalErrorBoundary extends Component<{ onClose: () => void; children: ReactNode }, { hasError: boolean }> {
+    state = { hasError: false };
+    static getDerivedStateFromError() {
+        return { hasError: true };
+    }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="fixed inset-0 z-[100] bg-[#0A0E16] flex flex-col items-center justify-center p-6" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+                    <p className="text-[#94A3B8] text-center mb-4">Ошибка в окне пользователей. Закройте и попробуйте снова.</p>
+                    <button type="button" onClick={() => { this.setState({ hasError: false }); this.props.onClose(); }} className="btn-primary px-5 py-2.5">Закрыть</button>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
 
 interface Props {
     isOpen: boolean;
@@ -43,9 +62,13 @@ export default function UserManagementModal({ isOpen, onClose }: Props) {
 
     if (!isOpen) return null;
 
-    const filteredUsers = users.filter(u => {
+    const safeUsers: MockAppUser[] = Array.isArray(users) ? users : [];
+    const filteredUsers = safeUsers.filter(u => {
+        if (!u || typeof u !== 'object') return false;
         if (onlyRegistered && u.registered === false) return false;
-        return u.name.toLowerCase().includes(searchTerm.toLowerCase()) || u.id.includes(searchTerm);
+        const name = (u.name ?? '').toString();
+        const id = (u.id ?? '').toString();
+        return name.toLowerCase().includes(searchTerm.toLowerCase()) || id.includes(searchTerm);
     });
 
     const refetchList = () => {
@@ -182,6 +205,7 @@ export default function UserManagementModal({ isOpen, onClose }: Props) {
     };
 
     return (
+        <UserModalErrorBoundary onClose={onClose}>
         <div className="fixed inset-0 z-[100] bg-[#0A0E16] flex flex-col animate-in slide-in-from-bottom-full duration-300" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-white/[0.06] surface-overlay shrink-0">
@@ -194,7 +218,7 @@ export default function UserManagementModal({ isOpen, onClose }: Props) {
                     </button>
                     <div className="min-w-0">
                         <h2 className="text-xl font-bold text-white tracking-wide truncate">
-                            {selectedUser ? selectedUser.name : 'Пользователи'}
+                            {selectedUser ? (selectedUser.name ?? selectedUser.id ?? '—') : 'Пользователи'}
                         </h2>
                         {selectedUser && (
                             <p className="text-xs text-[#8B949E] mt-0.5">
@@ -398,6 +422,7 @@ export default function UserManagementModal({ isOpen, onClose }: Props) {
                 </div>
             )}
         </div>
+        </UserModalErrorBoundary>
     );
 }
 

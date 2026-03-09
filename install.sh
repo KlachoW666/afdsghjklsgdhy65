@@ -319,8 +319,9 @@ fi
 if [ ! -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]; then
   echo "To fix 'unsupported protocol' / 'not secure' in Telegram:"
   echo "  1) Point DNS A-record $DOMAIN to this server IP"
-  echo "  2) Run: certbot --nginx -d $DOMAIN"
-  echo "  3) Run: ./start.sh  (or re-run this script)"
+  echo "  2) Run: sudo certbot --nginx -d $DOMAIN -d www.$DOMAIN --agree-tos -m admin@$DOMAIN"
+  echo "  3) Run again: cd /var/www/miniapp && sudo ./install.sh"
   echo ""
 fi
+echo "If Telegram shows ERR_SSL_VERSION_OR_CIPHER_MISMATCH after certbot, re-run: cd /var/www/miniapp && sudo ./install.sh"
 echo "======================================"

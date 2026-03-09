@@ -21,10 +21,11 @@
         var tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
-        if (tg.enableClosingConfirmation) tg.enableClosingConfirmation(false);
+        var v6_1 = tg.isVersionAtLeast && tg.isVersionAtLeast('6.1');
+        if (v6_1 && tg.enableClosingConfirmation) tg.enableClosingConfirmation(false);
         if (tg.isVersionAtLeast && tg.isVersionAtLeast('6.7') && tg.setViewportStableHeight) tg.setViewportStableHeight(true);
-        if (tg.setHeaderColor) tg.setHeaderColor('#0A0E16');
-        if (tg.setBackgroundColor) tg.setBackgroundColor('#0A0E16');
+        if (v6_1 && tg.setHeaderColor) tg.setHeaderColor('#0A0E16');
+        if (v6_1 && tg.setBackgroundColor) tg.setBackgroundColor('#0A0E16');
         var colorScheme = tg.colorScheme || 'dark';
         if (colorScheme === 'dark') document.documentElement.classList.add('dark');
       }
